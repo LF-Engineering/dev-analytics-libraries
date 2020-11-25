@@ -1,6 +1,6 @@
 package emoji
 
-func getEmojiUnicode(emojiStr string) string {
+func GetEmojiUnicode(emojiStr string) string {
 	if _,ok := CodeMap[emojiStr]; ok {
 		return CodeMap[emojiStr]
 	}
