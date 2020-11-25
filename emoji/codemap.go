@@ -1,6 +1,6 @@
 package emoji
 
-var emojiCodeMap = map[string]string{
+var CodeMap = map[string]string{
 	":+1:":                                 "\U0001f44d",
 	":-1:":                                 "\U0001f44e",
 	":100:":                                "\U0001f4af",

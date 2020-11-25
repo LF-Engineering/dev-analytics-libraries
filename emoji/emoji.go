@@ -1,8 +1,8 @@
 package emoji
 
 func getEmojiUnicode(emojiStr string) string {
-	if _,ok := emojiCodeMap[emojiStr]; ok {
-		return emojiCodeMap[emojiStr]
+	if _,ok := CodeMap[emojiStr]; ok {
+		return CodeMap[emojiStr]
 	}
 	return emojiStr
 }
