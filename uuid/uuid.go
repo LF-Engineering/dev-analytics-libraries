@@ -22,6 +22,7 @@ func trimQuotes(s string) string {
 	return s
 }
 
+// ToUnicode converts string to unicode
 func ToUnicode(s string) (string, error) {
 	dst := make([]byte, len(s)+100)
 
@@ -33,6 +34,7 @@ func ToUnicode(s string) (string, error) {
 	return string(dst[:nDst]), nil
 }
 
+// Generate uuid using sha1
 func Generate(args ...string) (string, error) {
 	for i := range args {
 		// strip spaces
@@ -87,6 +89,8 @@ For instance, these combinations will produce the same UUID:
 :raises ValueError: when source is None or empty; each one of the
 parameters is None; parameters are empty.
 */
+
+// GenerateIdentity generates uuid related to user ex. userUUID
 func GenerateIdentity(source, email, name, username *string) (string, error) {
 
 	if source == nil || *source == "" {

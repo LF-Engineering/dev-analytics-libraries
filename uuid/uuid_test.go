@@ -219,34 +219,34 @@ func testCaseInsensitive(t *testing.T) {
 	inpStr := []string{"scm", "jsmith@example.com",
 		"John Smith", "jsmith"}
 	inp := input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	uuid_a, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	uuidA, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	inpStr = []string{"SCM", "jsmith@example.com",
 		"John Smith", "jsmith"}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	uuid_b, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	uuidB, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 
-	assert.Equal(t, uuid_a, uuid_b)
+	assert.Equal(t, uuidA, uuidB)
 
 	inpStr = []string{"scm", "jsmith@example.com",
 		"john smith", "jsmith"}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	uuid_c, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	uuidC, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 
-	assert.Equal(t, uuid_c, uuid_a)
+	assert.Equal(t, uuidC, uuidA)
 
 	inpStr = []string{"scm", "jsmith@example.com",
 		"John Smith", "JSmith"}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	uuid_d, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	uuidD, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 
-	assert.Equal(t, uuid_d, uuid_a)
+	assert.Equal(t, uuidD, uuidA)
 
 	inpStr = []string{"scm", "JSMITH@example.com",
 		"John Smith", "jsmith"}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	uuid_e, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	uuidE, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 
-	assert.Equal(t, uuid_e, uuid_a)
+	assert.Equal(t, uuidE, uuidA)
 }
 
 func testCaseUnaccentName(t *testing.T) {
@@ -256,33 +256,33 @@ func testCaseUnaccentName(t *testing.T) {
 
 	inpStr := []string{"scm", "", "Max Müster", "mmuester"}
 	inp := input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	accent_result, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	accentResult, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	inpStr = []string{"scm", "", "Max Muster", "mmuester"}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	unaccent_result, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
-	assert.Equal(t, accent_result, unaccent_result)
-	assert.Equal(t, accent_result, "9a0498297d9f0b7e4baf3e6b3740d22d2257367c")
+	unaccentResult, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	assert.Equal(t, accentResult, unaccentResult)
+	assert.Equal(t, accentResult, "9a0498297d9f0b7e4baf3e6b3740d22d2257367c")
 
 	inpStr = []string{"scm", "", "Santiago Dueñas", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	accent_result, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	accentResult, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	inpStr = []string{"scm", "", "Santiago Duenas", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	unaccent_result, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
-	assert.Equal(t, accent_result, unaccent_result)
-	assert.Equal(t, accent_result, "0f1dd18839007ee8a11d02572ca0a0f4eedaf2cd")
+	unaccentResult, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	assert.Equal(t, accentResult, unaccentResult)
+	assert.Equal(t, accentResult, "0f1dd18839007ee8a11d02572ca0a0f4eedaf2cd")
 
 	inpStr = []string{"scm", "", "Tomáš Čechvala", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	accent_result, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	accentResult, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	inpStr = []string{"scm", "", "Tomáš Cechvala", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	partial_accent_result, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	partialAccentResult, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	inpStr = []string{"scm", "", "Tomas Cechvala", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
-	unaccent_result, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
-	assert.Equal(t, accent_result, unaccent_result)
-	assert.Equal(t, accent_result, partial_accent_result)
+	unaccentResult, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
+	assert.Equal(t, accentResult, unaccentResult)
+	assert.Equal(t, accentResult, partialAccentResult)
 }
 
 //// In go the invalid unicode character raises an error and this behavior cannot be changed to ignore the error
