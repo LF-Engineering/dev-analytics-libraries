@@ -31,7 +31,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateIdentity(t *testing.T) {
-	t.Run("Basic Test", testUUID3)
+	t.Run("Basic Test", testGenerateIdentity)
 	t.Run("Case Insensitive Test", testCaseInsensitive)
 	t.Run("Case Unaccent Test", testCaseUnaccentName)
 	t.Run("Empty Source Test", testEmptySource)
@@ -136,7 +136,7 @@ func testEmptyValue(t *testing.T) {
 
 }
 
-func testUUID3(t *testing.T) {
+func testGenerateIdentity(t *testing.T) {
 	//""
 	//"Check whether the function returns the expected UUID"
 	//""
