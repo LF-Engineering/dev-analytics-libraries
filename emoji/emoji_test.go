@@ -2,7 +2,7 @@ package emoji
 
 import "testing"
 
-func Test_getEmojiUnicode(t *testing.T) {
+func TestGetEmojiUnicode(t *testing.T) {
 	type args struct {
 		emojiStr string
 	}
@@ -24,7 +24,7 @@ func Test_getEmojiUnicode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getEmojiUnicode(tt.args.emojiStr); got != tt.want {
+			if got := GetEmojiUnicode(tt.args.emojiStr); got != tt.want {
 				t.Errorf("getEmojiUnicode() = %v, want %v", got, tt.want)
 			}
 		})
