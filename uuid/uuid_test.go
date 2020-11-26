@@ -25,7 +25,6 @@ func TestToUnicode(t *testing.T) {
 func TestGenerate(t *testing.T) {
 	t.Run("Basic Test", testGenerate)
 	t.Run("Generate vs Legacy UUID Test", testLegacyUUID)
-	t.Run("UUID2 Test", testUUID2)
 	t.Run("Empty value Test", testEmptyValue)
 	t.Run("Special Cases Test", testSpecialCases)
 	t.Run("Real Cases Test", testUUIDRealCases)
@@ -73,8 +72,11 @@ func testGenerate(t *testing.T) {
 		args   []string
 		result string
 	}
+
 	// Arrange
 	tests := []testData{
+		{[]string{"1", "2", "3", "4"}, "e7b71c81f5a0723e2237f157dba81777ce7c6c21"},
+		{[]string{"http://example.com/", "1234567"}, "47509b2f0d4ffc513ca9230838a69aa841d7f055"},
 		{[]string{" abc ", "123"}, "18ecd81c8bb792b5c23142c89aa60d0fb2442863"},
 		{[]string{"scm", "Mishal\\udcc5 Pytasz"}, "789a5559fc22f398b7e18d97601c027811773121"},
 		{[]string{"1483228800.0"}, "e4c0899ba951ed06781c30eab386e4e2a9cc9f60"},
@@ -114,18 +116,6 @@ func testLegacyUUID(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, uid, newUUID, "new UUID is not correct")
-}
-
-func testUUID2(t *testing.T) {
-	/*""
-	"Check whether the function returns the expected UUID"
-	""*/
-
-	result, _ := Generate("1", "2", "3", "4")
-	assert.Equal(t, result, "e7b71c81f5a0723e2237f157dba81777ce7c6c21")
-
-	result, _ = Generate("http://example.com/", "1234567")
-	assert.Equal(t, result, "47509b2f0d4ffc513ca9230838a69aa841d7f055")
 }
 
 func testEmptyValue(t *testing.T) {
