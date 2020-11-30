@@ -99,7 +99,7 @@ func execLegacyUUID(args ...string) (string, error) {
 		return "", err
 	}
 
-	return strings.TrimSuffix(string(output),"\n"), nil
+	return strings.TrimSuffix(string(output), "\n"), nil
 }
 
 func testLegacyUUID(t *testing.T) {
@@ -109,6 +109,9 @@ func testLegacyUUID(t *testing.T) {
 	f := 1.605627512585879e9
 	legacyUUID, err := execLegacyUUID("a", origin, fmt.Sprintf("%f", f))
 
+	fmt.Println("xxxxxxxxxxxx")
+	fmt.Println("expected => ", uid)
+	fmt.Println("Actual => ", legacyUUID)
 	assert.Equal(t, uid, legacyUUID, "legacy UUID is not correct")
 
 	newUUID, err := Generate(origin, fmt.Sprintf("%f", f))
