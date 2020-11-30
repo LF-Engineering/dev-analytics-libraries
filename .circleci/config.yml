@@ -14,6 +14,6 @@ jobs:
       - run: apt install software-properties-common -y
       - run: python /go/src/github.com/uuid.py a ali
       - run: go get -u golang.org/x/lint/golint
-      - run: make build
-      - run: make test
       - run: make lint
+      - run: make test
+      - run: make build
