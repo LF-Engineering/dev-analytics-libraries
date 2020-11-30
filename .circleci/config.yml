@@ -4,13 +4,16 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.13
-      - image: circleci/python:3.6.4
+      - image: golang:1.13
+      - image: circleci/python:3.9.0
     working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
     steps:
       - checkout
 
       # specify any bash command here prefixed with `run: `
       - run: cp ./testfiles/uuid.py /go/src/github.com/
+      - run: apt update
+      - run: apt install software-properties-common -y
       - run: python /go/src/github.com/uuid.py a ali
-      - run: go test -v ./...
+      - run: make test
+      - run: make lint

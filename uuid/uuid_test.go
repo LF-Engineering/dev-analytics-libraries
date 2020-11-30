@@ -93,7 +93,7 @@ func testGenerate(t *testing.T) {
 }
 
 func execLegacyUUID(args ...string) (string, error) {
-	cmd := exec.Command("/go/src/github.com/uuid.py", args...)
+	cmd := exec.Command("python3", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -107,7 +107,7 @@ func testLegacyUUID(t *testing.T) {
 	origin := "https://hub.docker.com/hyperledger/explorer-db"
 
 	f := 1.605627512585879e9
-	legacyUUID, err := execLegacyUUID( "a", origin, fmt.Sprintf("%f", f))
+	legacyUUID, err := execLegacyUUID("/go/src/github.com/uuid.py", "a", origin, fmt.Sprintf("%f", f))
 
 	assert.Equal(t, uid, legacyUUID, "legacy UUID is not correct")
 
@@ -334,6 +334,7 @@ func testSpecialCases(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(tt *testing.T) {
 			args := []string{
+				"/go/src/github.com/uuid.py",
 				"a",
 			}
 			args = append(args, testCase.input...)

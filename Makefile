@@ -4,4 +4,4 @@ lint: ## Lint the files
 	@golint -set_exit_status $(PKG_LIST)
 
 test:
-	go test ./... | grep -v /vendor/ -v
+	go test ./... -v | grep -v /vendor/
