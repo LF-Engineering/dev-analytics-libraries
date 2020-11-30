@@ -4,7 +4,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.14
     working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
     steps:
       - checkout
