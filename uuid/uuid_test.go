@@ -93,7 +93,7 @@ func testGenerate(t *testing.T) {
 }
 
 func execLegacyUUID(args ...string) (string, error) {
-	cmd := exec.Command("uuid.py", args...)
+	cmd := exec.Command("../testfiles/uuid.py", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
