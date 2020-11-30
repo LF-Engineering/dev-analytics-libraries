@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -93,7 +95,13 @@ func testGenerate(t *testing.T) {
 }
 
 func execLegacyUUID(args ...string) (string, error) {
-	cmd := exec.Command("./testfiles/uuid.py", args...)
+	path, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println("QQQQQQQQQQ")
+	fmt.Println(path)
+	cmd := exec.Command("../testfiles/uuid.py", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -107,11 +115,8 @@ func testLegacyUUID(t *testing.T) {
 	origin := "https://hub.docker.com/hyperledger/explorer-db"
 
 	f := 1.605627512585879e9
-	legacyUUID, err := execLegacyUUID("a", origin, fmt.Sprintf("%f", f))
+	legacyUUID, err := execLegacyUUID( "a", origin, fmt.Sprintf("%f", f))
 
-	fmt.Println("xxxxxxxxxxxx")
-	fmt.Println("expected => ", uid)
-	fmt.Println("Actual => ", legacyUUID)
 	assert.Equal(t, uid, legacyUUID, "legacy UUID is not correct")
 
 	newUUID, err := Generate(origin, fmt.Sprintf("%f", f))
@@ -341,7 +346,6 @@ func testSpecialCases(t *testing.T) {
 			}
 			args = append(args, testCase.input...)
 			legacyUUID, _ := execLegacyUUID(args...)
-
 			uid, _ := Generate(testCase.input...)
 
 			assert.Equal(tt, legacyUUID, uid)
