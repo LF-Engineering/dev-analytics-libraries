@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -95,13 +93,7 @@ func testGenerate(t *testing.T) {
 }
 
 func execLegacyUUID(args ...string) (string, error) {
-	path, err := os.Getwd()
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Println("QQQQQQQQQQ")
-	fmt.Println(path)
-	cmd := exec.Command("../testfiles/uuid.py", args...)
+	cmd := exec.Command("/go/src/github.com/uuid.py", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err

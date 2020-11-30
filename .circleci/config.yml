@@ -11,6 +11,6 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
-      - run:
-          name: Running tests
-          command: make test
+      - run: cp ./testfiles/uuid.py /go/src/github.com/
+      - run: python /go/src/github.com/uuid.py a ali
+      - run: go test -v ./...
