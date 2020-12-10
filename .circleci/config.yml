@@ -1,0 +1,18 @@
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      - image: golang:1.13
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    steps:
+      - checkout
+
+      - run: cp ./testfiles/uuid.py /go/src/github.com/
+      - run: apt update
+      - run: apt install software-properties-common -y
+      - run: python /go/src/github.com/uuid.py a ali
+      - run: go get -u golang.org/x/lint/golint
+      - run: make lint
+      - run: make test
+      - run: make build
