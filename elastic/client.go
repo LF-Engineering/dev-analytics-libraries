@@ -52,8 +52,8 @@ type BulkData struct {
 	Data      interface{}
 }
 
-// NewESClientProvider ...
-func NewESClientProvider(params *ESParams) (*ClientProvider, error) {
+// NewClientProvider ...
+func NewClientProvider(params *ESParams) (*ClientProvider, error) {
 	config := elasticsearch.Config{
 		Addresses: []string{params.URL},
 		Username:  params.Username,
