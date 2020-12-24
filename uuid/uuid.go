@@ -17,7 +17,8 @@ import (
 func trimQuotes(s string) string {
 	if len(s) >= 2 {
 		r := regexp.MustCompile(`(["'])`)
-		s = r.ReplaceAllString(s, `\$1`)
+		// s = r.ReplaceAllString(s, `\$1`) // This was escaping quotes not trimming them " --> \"
+		s = r.ReplaceAllString(s, ``)
 	}
 	return s
 }
