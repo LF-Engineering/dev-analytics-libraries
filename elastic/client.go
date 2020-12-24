@@ -21,8 +21,8 @@ type ClientProvider struct {
 	client *elasticsearch.Client
 }
 
-// ESParams ...
-type ESParams struct {
+// Params ...
+type Params struct {
 	URL      string
 	Username string
 	Password string
@@ -53,7 +53,7 @@ type BulkData struct {
 }
 
 // NewClientProvider ...
-func NewClientProvider(params *ESParams) (*ClientProvider, error) {
+func NewClientProvider(params *Params) (*ClientProvider, error) {
 	config := elasticsearch.Config{
 		Addresses: []string{params.URL},
 		Username:  params.Username,
