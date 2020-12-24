@@ -1,7 +1,10 @@
-PKG_LIST := $(shell go list ./... | grep -v /vendor/)
+PKG_LIST = $(shell go list ./... | grep -v /vendor/)
 
-lint: ## Lint the files
+lint: fmt
 	golint -set_exit_status $(PKG_LIST)
+
+fmt:
+	./scripts/for_each_go_file.sh gofmt -s -w
 
 test:
 	go test -v $(PKG_LIST)
