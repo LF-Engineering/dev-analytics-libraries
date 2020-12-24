@@ -18,6 +18,7 @@ type Manager struct {
 	region     string
 }
 
+// NewManager new s3provider manager
 func NewManager(bucket string, region string) *Manager {
 	return &Manager{
 		bucketName: bucket,

@@ -47,7 +47,7 @@ type Stat struct {
 
 // BulkData to be saved using bulkIndex
 type BulkData struct {
-	IndexName string
+	IndexName string `json:"index_name"`
 	ID        string
 	Data      interface{}
 }
