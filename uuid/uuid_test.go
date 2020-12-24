@@ -11,7 +11,7 @@ import (
 )
 
 const(
-  legacyUUIDPath = "/go/src/github.com/uuid.py"
+  LegacyUUIDPath = "/go/src/github.com/uuid.py"
   // legacyUUIDpath = "/usr/bin/uuid.py"
 )
 
@@ -112,7 +112,7 @@ func testLegacyUUID(t *testing.T) {
 	origin := "https://hub.docker.com/hyperledger/explorer-db"
 
 	f := 1.605627512585879e9
-	legacyUUID, err := execLegacyUUID(legacyUUIDpath, "a", origin, fmt.Sprintf("%f", f))
+	legacyUUID, err := execLegacyUUID(LegacyUUIDPath, "a", origin, fmt.Sprintf("%f", f))
 
 	assert.Equal(t, uid, legacyUUID, "legacy UUID is not correct")
 
@@ -351,7 +351,7 @@ func testSpecialCases(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(tt *testing.T) {
 			args := []string{
-				legacyUUIDpath,
+				LegacyUUIDPath,
 				"a",
 			}
 			args = append(args, testCase.input...)
