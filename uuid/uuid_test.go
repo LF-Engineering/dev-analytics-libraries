@@ -351,7 +351,7 @@ func testSpecialCases(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(tt *testing.T) {
 			args := []string{
-				LegacyUUIDpath,
+				LegacyUUIDPath,
 				"a",
 			}
 			args = append(args, testCase.input...)
