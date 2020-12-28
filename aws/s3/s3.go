@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+// Manager ...
 type Manager struct {
 	bucketName string
 	region     string
