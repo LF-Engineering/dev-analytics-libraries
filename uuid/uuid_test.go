@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-const(
-  LegacyUUIDPath = "/go/src/github.com/uuid.py"
-  // legacyUUIDpath = "/usr/bin/uuid.py"
+const (
+	LegacyUUIDPath = "/go/src/github.com/uuid.py"
+	// legacyUUIDpath = "/usr/bin/uuid.py"
 )
 
 type input struct {
@@ -32,6 +32,7 @@ func TestGenerate(t *testing.T) {
 	t.Run("Generate vs Legacy UUID Test", testLegacyUUID)
 	t.Run("Empty value Test", testEmptyValue)
 	t.Run("Special Cases Test", testSpecialCases)
+	t.Run("Identity Special Cases Test", testSpecialCasesIdentity)
 	t.Run("Real Cases Test", testUUIDRealCases)
 }
 
@@ -299,6 +300,49 @@ func testEmptySource(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func testSpecialCasesIdentity(t *testing.T) {
+	type item struct {
+		name  string
+		input []string
+	}
+	testCases := []item{
+		{
+			"test0",
+			[]string{"rocketchat", "none", "ONeil", "oneil"},
+		},
+		{
+			"test1",
+			[]string{"rocketchat", "none", "O'Neil", "oneil"},
+		},
+		{
+			"test2",
+			[]string{"rocketchat", "none", `O"Neil`, "oneil"},
+		},
+		{
+			"test3",
+			[]string{"rocketchat", "none", "O`Neil", "oneil"},
+		},
+		{
+			"test4",
+			[]string{"github", "none", `\[._.]/ Adam Eivy`, "atomantic"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(tt *testing.T) {
+			args := []string{
+				LegacyUUIDPath,
+				"u",
+			}
+			args = append(args, testCase.input...)
+			legacyUUID, _ := execLegacyUUID(args...)
+			uid, _ := GenerateIdentity(&testCase.input[0], &testCase.input[1], &testCase.input[2], &testCase.input[3])
+			fmt.Printf("%v -> %s,%s\n", args, legacyUUID, uid)
+			assert.Equal(tt, legacyUUID, uid)
+		})
+	}
+}
+
 func testSpecialCases(t *testing.T) {
 	type item struct {
 		name  string
@@ -346,6 +390,10 @@ func testSpecialCases(t *testing.T) {
 			"test10",
 			[]string{"rocketchat", "none", "O`Neil", "oneil"},
 		},
+		{
+			"test11",
+			[]string{"github", "none", `\[._.]/ Adam Eivy`, "atomantic"},
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -357,8 +405,8 @@ func testSpecialCases(t *testing.T) {
 			args = append(args, testCase.input...)
 			legacyUUID, _ := execLegacyUUID(args...)
 			uid, _ := Generate(testCase.input...)
-
 			assert.Equal(tt, legacyUUID, uid)
+
 		})
 	}
 }

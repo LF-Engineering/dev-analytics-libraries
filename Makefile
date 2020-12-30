@@ -4,7 +4,7 @@ lint: fmt
 	golint -set_exit_status $(PKG_LIST)
 
 fmt:
-	./scripts/for_each_go_file.sh gofmt -s -w
+	./scripts/for_each_go_file.sh 'gofmt -s -w'
 
 test:
 	go test -v $(PKG_LIST)

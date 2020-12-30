@@ -7,21 +7,10 @@ import (
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	"regexp"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 )
-
-func trimQuotes(s string) string {
-	if len(s) >= 2 {
-		r := regexp.MustCompile(`(["'])`)
-		// s = r.ReplaceAllString(s, `\$1`) // This was escaping quotes not trimming them " --> \"
-		s = r.ReplaceAllString(s, ``)
-	}
-	return s
-}
 
 // ToUnicode converts string to unicode
 func ToUnicode(s string) (string, error) {
@@ -140,14 +129,6 @@ func GenerateIdentity(source, email, name, username *string) (string, error) {
 
 		// strip spaces
 		args[i] = strings.TrimSpace(args[i])
-
-		// remove surrogates
-		output, err := strconv.Unquote(`"` + trimQuotes(args[i]) + `"`)
-		if err != nil {
-			return "", err
-		}
-
-		args[i] = output
 	}
 
 	data := strings.Join(args, ":")
