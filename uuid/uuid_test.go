@@ -10,6 +10,11 @@ import (
 	"testing"
 )
 
+const(
+  LegacyUUIDPath = "/go/src/github.com/uuid.py"
+  // legacyUUIDpath = "/usr/bin/uuid.py"
+)
+
 type input struct {
 	source   *string
 	email    *string
@@ -107,7 +112,7 @@ func testLegacyUUID(t *testing.T) {
 	origin := "https://hub.docker.com/hyperledger/explorer-db"
 
 	f := 1.605627512585879e9
-	legacyUUID, err := execLegacyUUID("/go/src/github.com/uuid.py", "a", origin, fmt.Sprintf("%f", f))
+	legacyUUID, err := execLegacyUUID(LegacyUUIDPath, "a", origin, fmt.Sprintf("%f", f))
 
 	assert.Equal(t, uid, legacyUUID, "legacy UUID is not correct")
 
@@ -329,12 +334,24 @@ func testSpecialCases(t *testing.T) {
 			"test7",
 			[]string{"A", "ą", "ć", "ę"},
 		},
+		{
+			"test8",
+			[]string{"rocketchat", "none", "O'Neil", "oneil"},
+		},
+		{
+			"test9",
+			[]string{"rocketchat", "none", `O"Neil`, "oneil"},
+		},
+		{
+			"test10",
+			[]string{"rocketchat", "none", "O`Neil", "oneil"},
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(tt *testing.T) {
 			args := []string{
-				"/go/src/github.com/uuid.py",
+				LegacyUUIDPath,
 				"a",
 			}
 			args = append(args, testCase.input...)
