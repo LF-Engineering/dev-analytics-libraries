@@ -47,7 +47,7 @@ type Stat struct {
 
 // BulkData to be saved using bulkIndex
 type BulkData struct {
-	IndexName string
+	IndexName string `json:"index_name"`
 	ID        string
 	Data      interface{}
 }
@@ -226,7 +226,7 @@ func (p *ClientProvider) Bulk(body []byte) ([]byte, error) {
 }
 
 // BulkInsert inserts more than one item using one request
-func (p *ClientProvider) BulkInsert(data []*BulkData) ([]byte, error) {
+func (p *ClientProvider) BulkInsert(data []BulkData) ([]byte, error) {
 	lines := make([]interface{}, 0)
 
 	for _, item := range data {
