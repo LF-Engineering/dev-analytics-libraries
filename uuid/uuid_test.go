@@ -337,7 +337,7 @@ func testSpecialCasesIdentity(t *testing.T) {
 			args = append(args, testCase.input...)
 			legacyUUID, _ := execLegacyUUID(args...)
 			uid, _ := GenerateIdentity(&testCase.input[0], &testCase.input[1], &testCase.input[2], &testCase.input[3])
-			fmt.Printf("%v -> %s,%s\n", args, legacyUUID, uid)
+
 			assert.Equal(tt, legacyUUID, uid)
 		})
 	}
