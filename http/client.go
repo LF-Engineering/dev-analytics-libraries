@@ -13,7 +13,7 @@ type ClientProvider struct {
 	httpclient *http.Client
 }
 
-// NewClientProvider ...
+// NewClientProvider initiate a new client object
 func NewClientProvider(timeout time.Duration) *ClientProvider {
 	return &ClientProvider{
 		httpclient: &http.Client{
