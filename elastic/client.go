@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	jsoniter "github.com/json-iterator/go"
@@ -344,4 +345,20 @@ func (p *ClientProvider) GetStat(index string, field string, aggType string, mus
 	}
 
 	return date, nil
+}
+
+// DelayOfCreateIndex delay creating index and retry if fails
+func (p *ClientProvider) DelayOfCreateIndex(ex func(str string, b []byte) ([]byte, error), uin uint, du time.Duration, index string, data []byte) error {
+
+	retry.DefaultAttempts = uin
+	retry.DefaultDelay = du
+
+	err := retry.Do(func() error {
+		_, err := ex(index, data)
+		return err
+	}, retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		return retry.BackOffDelay(n, err, config)
+	}))
+
+	return err
 }
