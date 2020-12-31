@@ -13,8 +13,8 @@ type ClientProvider struct {
 	httpclient *http.Client
 }
 
-// NewHTTPClientProvider ...
-func NewHTTPClientProvider(timeout time.Duration) *ClientProvider {
+// NewClientProvider initiate a new client object
+func NewClientProvider(timeout time.Duration) *ClientProvider {
 	return &ClientProvider{
 		httpclient: &http.Client{
 			Timeout: timeout,

@@ -3,6 +3,7 @@ module github.com/LF-Engineering/dev-analytics-libraries
 go 1.15
 
 require (
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.36.15
 	github.com/elastic/go-elasticsearch/v7 v7.10.0
 	github.com/json-iterator/go v1.1.10
