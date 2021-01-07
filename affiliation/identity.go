@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
 	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
 	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
@@ -31,10 +32,11 @@ type Affiliation struct {
 	Environment      string
 	httpClient       *http.ClientProvider
 	esClient         *elastic.ClientProvider
+	auth0Client      *auth0.ClientProvider
 }
 
 // NewAffiliationsClient consumes
-//  affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env
+//  affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
 func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env, authGrantType, authClientID, authClientSecret, authAudience, authURL string) (*Affiliation, error) {
 	aff := &Affiliation{
 		AffBaseURL:       affBaseURL,
@@ -50,13 +52,14 @@ func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername,
 		Environment:      env,
 	}
 
-	httpClientProvider, esClientProvider, err := buildServices(aff)
+	httpClientProvider, esClientProvider, auth0ClientProvider, err := buildServices(aff)
 	if err != nil {
 		return nil, err
 	}
 
 	aff.esClient = esClientProvider
 	aff.httpClient = httpClientProvider
+	aff.auth0Client = auth0ClientProvider
 
 	return aff, nil
 }
@@ -67,7 +70,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println("Repository: AddIdentity: Identity is nil")
 		return false
 	}
-	token, err := a.ValidateToken(a.Environment)
+	token, err := a.auth0Client.ValidateToken(a.Environment)
 	if err != nil {
 		log.Println(err)
 	}
@@ -96,16 +99,22 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	return true
 }
 
-func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, err error) {
+func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, auth0ClientProvider *auth0.ClientProvider, err error) {
 	esClientProvider, err = elastic.NewClientProvider(&elastic.Params{
 		URL:      a.ESCacheURL,
 		Username: a.ESCacheUsername,
 		Password: a.ESCachePassword,
 	})
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
 	httpClientProvider = http.NewClientProvider(60)
+
+	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL)
+	if err != nil {
+		return
+	}
+
 	return
 }
