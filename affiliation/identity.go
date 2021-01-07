@@ -18,26 +18,36 @@ type Affiliations interface {
 
 // Affiliation struct
 type Affiliation struct {
-	AffBaseURL      string
-	ProjectSlug     string
-	ESCacheURL      string
-	ESCacheUsername string
-	ESCachePassword string
-	Environment     string
-	httpClient      *http.ClientProvider
-	esClient        *elastic.ClientProvider
+	AffBaseURL       string
+	ProjectSlug      string
+	ESCacheURL       string
+	ESCacheUsername  string
+	ESCachePassword  string
+	AuthGrantType    string
+	AuthClientID     string
+	AuthClientSecret string
+	AuthAudience     string
+	AuthURL          string
+	Environment      string
+	httpClient       *http.ClientProvider
+	esClient         *elastic.ClientProvider
 }
 
 // NewAffiliationsClient consumes
 //  affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env
-func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env string) (*Affiliation, error) {
+func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env, authGrantType, authClientID, authClientSecret, authAudience, authURL string) (*Affiliation, error) {
 	aff := &Affiliation{
-		AffBaseURL:      affBaseURL,
-		ProjectSlug:     projectSlug,
-		ESCacheURL:      esCacheURL,
-		ESCacheUsername: esCacheUsername,
-		ESCachePassword: esCachePassword,
-		Environment:     env,
+		AffBaseURL:       affBaseURL,
+		ProjectSlug:      projectSlug,
+		ESCacheURL:       esCacheURL,
+		ESCacheUsername:  esCacheUsername,
+		ESCachePassword:  esCachePassword,
+		AuthGrantType:    authGrantType,
+		AuthClientID:     authClientID,
+		AuthClientSecret: authClientSecret,
+		AuthAudience:     authAudience,
+		AuthURL:          authURL,
+		Environment:      env,
 	}
 
 	httpClientProvider, esClientProvider, err := buildServices(aff)

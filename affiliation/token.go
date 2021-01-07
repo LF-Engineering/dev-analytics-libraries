@@ -22,19 +22,18 @@ func (a *Affiliation) GenerateToken() string {
 	headers["Content-type"] = "application/json"
 
 	payload := map[string]string{
-		"grant_type":    "client_credentials",
-		"client_id":     os.Getenv("CLIENT_ID"),
-		"client_secret": os.Getenv("CLIENT_SECRET"),
-		"audience":      os.Getenv("CLIENT_AUDIENCE"),
+		"grant_type":    a.AuthGrantType,
+		"client_id":     a.AuthClientID,
+		"client_secret": a.AuthClientSecret,
+		"audience":      a.AuthAudience,
 	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println(err)
 	}
-	authURL := fmt.Sprintf("https://%s/oauth/token", os.Getenv("AUTH_URL"))
 
-	_, response, err := a.httpClient.Request(authURL, "POST", headers, body, nil)
+	_, response, err := a.httpClient.Request(a.AuthURL, "POST", headers, body, nil)
 	if err != nil {
 		log.Println("GenerateToken", err)
 	}
