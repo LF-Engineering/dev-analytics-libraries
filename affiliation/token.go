@@ -15,7 +15,7 @@ import (
 )
 
 // GenerateToken ...
-func (a *affiliation) GenerateToken() string {
+func (a *Affiliation) GenerateToken() string {
 	var result Resp
 
 	headers := make(map[string]string, 0)
@@ -32,9 +32,9 @@ func (a *affiliation) GenerateToken() string {
 	if err != nil {
 		fmt.Println(err)
 	}
-	authUrl := fmt.Sprintf("https://%s/oauth/token", os.Getenv("AUTH_URL"))
+	authURL := fmt.Sprintf("https://%s/oauth/token", os.Getenv("AUTH_URL"))
 
-	_, response, err := a.httpClient.Request(authUrl, "POST", headers, body, nil)
+	_, response, err := a.httpClient.Request(authURL, "POST", headers, body, nil)
 	if err != nil {
 		log.Println("GenerateToken", err)
 	}
@@ -51,7 +51,7 @@ func (a *affiliation) GenerateToken() string {
 }
 
 // GetToken ...
-func (a *affiliation) GetToken(env string) (string, error) {
+func (a *Affiliation) GetToken(env string) (string, error) {
 	query := make(map[string]interface{}, 0)
 	query["name"] = "token"
 	res, err := a.esClient.Search(strings.TrimSpace("auth0-token-cache-"+env), query)
@@ -78,7 +78,7 @@ func (a *affiliation) GetToken(env string) (string, error) {
 
 // CreateAuthToken accepts
 //  esCacheURL, esCacheUsername, esCachePassword, Token
-func (a *affiliation) CreateAuthToken(env, Token string) {
+func (a *Affiliation) CreateAuthToken(env, Token string) {
 	log.Println("creating new auth token")
 	at := AuthToken{
 		Name:  "AuthToken",
@@ -94,7 +94,7 @@ func (a *affiliation) CreateAuthToken(env, Token string) {
 }
 
 // UpdateAuthToken ...
-func (a *affiliation) UpdateAuthToken(env, token string) {
+func (a *Affiliation) UpdateAuthToken(env, token string) {
 	fields := fmt.Sprintf(`
 		{
 			"script" : {
@@ -111,7 +111,7 @@ func (a *affiliation) UpdateAuthToken(env, token string) {
 }
 
 // ValidateToken ...
-func (a *affiliation) ValidateToken(env string) (string, error) {
+func (a *Affiliation) ValidateToken(env string) (string, error) {
 	var authToken string
 	tokenString, err := a.GetToken(env)
 	if err != nil {
@@ -146,10 +146,10 @@ func (a *affiliation) ValidateToken(env string) (string, error) {
 	if now.Before(tm) {
 		log.Println("ValidateToken: Token is valid")
 		return tokenString, nil
-	} else {
-		log.Println("ValidateToken: token is expired!")
-		authToken = a.GenerateToken()
-		a.UpdateAuthToken(env, authToken)
 	}
+	log.Println("ValidateToken: token is expired!")
+	authToken = a.GenerateToken()
+	a.UpdateAuthToken(env, authToken)
+
 	return authToken, nil
 }

@@ -11,15 +11,16 @@ import (
 	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
 
-// Affiliations
+// Affiliations interface
 type Affiliations interface {
-	AddIdentity(identity *Identity, projectSlug string) bool
+	AddIdentity(identity *Identity) bool
 }
 
-type affiliation struct {
+// Affiliation struct
+type Affiliation struct {
 	AffBaseURL      string
 	ProjectSlug     string
-	ESCacheUrl      string
+	ESCacheURL      string
 	ESCacheUsername string
 	ESCachePassword string
 	Environment     string
@@ -29,11 +30,11 @@ type affiliation struct {
 
 // NewAffiliationsClient consumes
 //  affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env
-func NewAffiliationsClient(affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, env string) (*affiliation, error) {
-	aff := &affiliation{
+func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env string) (*Affiliation, error) {
+	aff := &Affiliation{
 		AffBaseURL:      affBaseURL,
 		ProjectSlug:     projectSlug,
-		ESCacheUrl:      esCacheUrl,
+		ESCacheURL:      esCacheURL,
 		ESCacheUsername: esCacheUsername,
 		ESCachePassword: esCachePassword,
 		Environment:     env,
@@ -51,7 +52,7 @@ func NewAffiliationsClient(affBaseURL, projectSlug, esCacheUrl, esCacheUsername,
 }
 
 // AddIdentity ...
-func (a *affiliation) AddIdentity(identity *Identity, projectSlug string) bool {
+func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	if identity == nil {
 		log.Println("Repository: AddIdentity: Identity is nil")
 		return false
@@ -70,7 +71,7 @@ func (a *affiliation) AddIdentity(identity *Identity, projectSlug string) bool {
 	queryParams["email"] = identity.Email
 	queryParams["uuid"] = identity.UUID
 
-	endpoint := a.AffBaseURL + "/affiliation/" + a.ProjectSlug + "/add_identity/" + url.PathEscape(identity.Source)
+	endpoint := a.AffBaseURL + "/Affiliation/" + a.ProjectSlug + "/add_identity/" + url.PathEscape(identity.Source)
 	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
 	if err != nil {
 		log.Println("Repository: AddIdentity: Could not insert the identity: ", err)
@@ -85,9 +86,9 @@ func (a *affiliation) AddIdentity(identity *Identity, projectSlug string) bool {
 	return true
 }
 
-func buildServices(a *affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, err error) {
+func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, err error) {
 	esClientProvider, err = elastic.NewClientProvider(&elastic.Params{
-		URL:      a.ESCacheUrl,
+		URL:      a.ESCacheURL,
 		Username: a.ESCacheUsername,
 		Password: a.ESCachePassword,
 	})
