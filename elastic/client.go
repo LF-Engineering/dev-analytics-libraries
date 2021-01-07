@@ -413,14 +413,14 @@ func (p *ClientProvider) Search(index string, query map[string]interface{}) (bit
 }
 
 // CreateDocument ...
-func (p *ClientProvider) CreateDocument(index, documentID string,  body []byte) ([]byte, error) {
+func (p *ClientProvider) CreateDocument(index, documentID string, body []byte) ([]byte, error) {
 	buf := bytes.NewReader(body)
 
 	// Create es document request
 	res, err := esapi.CreateRequest{
-		Index: index,
+		Index:      index,
 		DocumentID: documentID,
-		Body:  buf,
+		Body:       buf,
 	}.Do(context.Background(), p.client)
 	if err != nil {
 		return nil, err
@@ -440,7 +440,7 @@ func (p *ClientProvider) CreateDocument(index, documentID string,  body []byte) 
 }
 
 // UpdateDocumentByQuery ...
-func (p *ClientProvider) UpdateDocumentByQuery(index, query,  fields string) ([]byte, error) {
+func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]byte, error) {
 	// update es document request
 	res, err := p.client.UpdateByQuery(
 		[]string{index},
