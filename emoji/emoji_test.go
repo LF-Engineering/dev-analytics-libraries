@@ -13,12 +13,12 @@ func TestGetEmojiUnicode(t *testing.T) {
 	}{
 		{
 			"Test 1",
-			args{emojiStr:":+1:"},
+			args{emojiStr: ":+1:"},
 			"\U0001f44d",
 		},
 		{
 			"Test 2",
-			args{emojiStr:":abacus:"},
+			args{emojiStr: ":abacus:"},
 			"\U0001f9ee",
 		},
 	}

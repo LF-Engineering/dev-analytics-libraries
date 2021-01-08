@@ -367,3 +367,103 @@ func (p *ClientProvider) DelayOfCreateIndex(ex func(str string, b []byte) ([]byt
 
 	return err
 }
+
+// Search ...
+func (p *ClientProvider) Search(index string, query map[string]interface{}) (bites []byte, err error) {
+	var buf bytes.Buffer
+	err = json.NewEncoder(&buf).Encode(query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := p.client.Search(
+		p.client.Search.WithIndex(index),
+		p.client.Search.WithBody(&buf),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	if res.StatusCode == 200 {
+		// index exists so return true
+		if err = json.NewDecoder(res.Body).Decode(&bites); err != nil {
+			return
+		}
+
+		return
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return nil, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return nil, err
+	}
+
+	return nil, errors.New("search failed")
+}
+
+// CreateDocument ...
+func (p *ClientProvider) CreateDocument(index, documentID string, body []byte) ([]byte, error) {
+	buf := bytes.NewReader(body)
+
+	// Create es document request
+	res, err := esapi.CreateRequest{
+		Index:      index,
+		DocumentID: documentID,
+		Body:       buf,
+	}.Do(context.Background(), p.client)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	resBytes, err := toBytes(res)
+	if err != nil {
+		return nil, err
+	}
+
+	return resBytes, nil
+}
+
+// UpdateDocumentByQuery ...
+func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]byte, error) {
+	// update es document request
+	res, err := p.client.UpdateByQuery(
+		[]string{index},
+		p.client.UpdateByQuery.WithQuery(query),
+		p.client.UpdateByQuery.WithBody(strings.NewReader(fields)))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	resBytes, err := toBytes(res)
+	if err != nil {
+		return nil, err
+	}
+
+	return resBytes, nil
+}
