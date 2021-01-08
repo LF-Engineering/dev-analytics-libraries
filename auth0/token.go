@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +17,6 @@ import (
 
 // ClientProvider ...
 type ClientProvider struct {
-	Auth0BaseURL     string
 	ESCacheURL       string
 	ESCacheUsername  string
 	ESCachePassword  string
@@ -81,7 +79,7 @@ func (a *ClientProvider) GenerateToken() string {
 		log.Println("GenerateToken", err)
 	}
 
-	log.Println(os.Getenv("AUTH_URL"), " ", string(body))
+	log.Println(a.AuthURL, " ", string(body))
 	err = json.Unmarshal(response, &result)
 	if err != nil {
 		log.Println("GenerateToken", err)

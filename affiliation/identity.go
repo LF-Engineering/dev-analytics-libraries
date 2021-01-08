@@ -84,7 +84,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	queryParams["email"] = identity.Email
 	queryParams["uuid"] = identity.UUID
 
-	endpoint := a.AffBaseURL + "/Affiliation/" + a.ProjectSlug + "/add_identity/" + url.PathEscape(identity.Source)
+	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug)+ "/add_identity/" + url.PathEscape(identity.Source)
 	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
 	if err != nil {
 		log.Println("Repository: AddIdentity: Could not insert the identity: ", err)
