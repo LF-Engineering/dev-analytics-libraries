@@ -195,6 +195,7 @@ func (p *ClientProvider) Bulk(body []byte) ([]byte, error) {
 
 	res, err := req.Do(context.Background(), p.client)
 	if err != nil {
+		log.Printf("ReqErr: %s", err.Error())
 		return nil, err
 	}
 	defer func() {
@@ -210,6 +211,10 @@ func (p *ClientProvider) Bulk(body []byte) ([]byte, error) {
 
 	if res.StatusCode == 200 {
 		return resBytes, nil
+	}
+
+	if res.StatusCode == 413 {
+		return nil, errors.New("payload too large. decrease documents to <= 1000")
 	}
 
 	if res.IsError() {
