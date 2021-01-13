@@ -84,7 +84,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	queryParams["email"] = identity.Email
 	queryParams["uuid"] = identity.UUID
 
-	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug)+ "/add_identity/" + url.PathEscape(identity.Source)
+	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
 	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
 	if err != nil {
 		log.Println("Repository: AddIdentity: Could not insert the identity: ", err)
@@ -97,6 +97,96 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		return false
 	}
 	return true
+}
+
+// GetIdentity ...
+func (a *Affiliation) GetIdentity(uuid string) *Identity {
+	if uuid == "" {
+		log.Println("GetIdentity: uuid is empty")
+		return nil
+	}
+	token, err := a.auth0Client.ValidateToken(a.Environment)
+	if err != nil {
+		log.Println(err)
+	}
+	headers := make(map[string]string, 0)
+	headers["Content-type"] = "application/json"
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+
+	endpoint := a.AffBaseURL + "/affiliation/get_identity/" + uuid
+
+	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("GetIdentity: Could not get the identity: ", err)
+		return nil
+	}
+	var identity Identity
+	err = json.Unmarshal(res, &identity)
+	if err != nil {
+		log.Println("GetIdentity: failed to unmarshal identity: ", err)
+		return nil
+	}
+	return &identity
+}
+
+// GetOrganizations ...
+func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
+	if uuid == "" || projectSlug == "" {
+		return nil
+	}
+	token, err := a.auth0Client.ValidateToken(a.Environment)
+	if err != nil {
+		log.Println(err)
+	}
+	headers := make(map[string]string, 0)
+	headers["Content-type"] = "application/json"
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+
+	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/enrollments/" + uuid
+
+	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("GetOrganizations: Could not get the organizations: ", err)
+		return nil
+	}
+
+	var response EnrollmentsResponse
+	err = json.Unmarshal(res, &response)
+	if err != nil {
+		log.Println("GetOrganizations: failed to unmarshal enrollments response: ", err)
+		return nil
+	}
+	return &response.Enrollments
+}
+
+// GetProfile ...
+func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
+	if uuid == "" || projectSlug == "" {
+		return nil
+	}
+	token, err := a.auth0Client.ValidateToken(a.Environment)
+	if err != nil {
+		log.Println(err)
+	}
+	headers := make(map[string]string, 0)
+	headers["Content-type"] = "application/json"
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+
+	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/get_profile/" + uuid
+
+	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("GetProfile: Could not get the profile: ", err)
+		return nil
+	}
+
+	var response ProfileResponse
+	err = json.Unmarshal(res, &response)
+	if err != nil {
+		log.Println("GetProfile: failed to unmarshal profile response: ", err)
+		return nil
+	}
+	return &response
 }
 
 func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, auth0ClientProvider *auth0.ClientProvider, err error) {
