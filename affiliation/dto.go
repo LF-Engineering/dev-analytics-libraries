@@ -58,7 +58,7 @@ type Profile struct {
 	GenderAcc int    `json:"gender_acc"`
 }
 
-// ProfileResponse
+// ProfileResponse ...
 type ProfileResponse struct {
 	Enrollments  []Enrollment `json:"enrollments"`
 	Identities   []Identity   `json:"identities"`
