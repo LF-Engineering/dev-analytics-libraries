@@ -25,3 +25,25 @@ type AffiliationsResponse struct {
 	} `json:"profile"`
 	UUID string `json:"uuid"`
 }
+
+// Enrollment ...
+type Enrollment struct {
+	End          time.Time `json:"end"`
+	ID           int       `json:"id"`
+	Organization struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"organization"`
+	OrganizationID int       `json:"organization_id"`
+	Role           string    `json:"role"`
+	Start          time.Time `json:"start"`
+	UUID           string    `json:"uuid"`
+}
+
+// EnrollmentsResponse
+type EnrollmentsResponse struct {
+	Enrollments []Enrollment `json:"enrollments"`
+	Scope string `json:"scope"`
+	User  string `json:"user"`
+	UUID  string `json:"uuid"`
+}
