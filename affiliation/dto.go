@@ -40,7 +40,7 @@ type Enrollment struct {
 	UUID           string    `json:"uuid"`
 }
 
-// EnrollmentsResponse
+// EnrollmentsResponse ...
 type EnrollmentsResponse struct {
 	Enrollments []Enrollment `json:"enrollments"`
 	Scope string `json:"scope"`
