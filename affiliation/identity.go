@@ -214,14 +214,6 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		return nil, err
 	}
 
-	// Todo : need review
-	//var errMsg AffiliationsResponse
-	//err = json.Unmarshal(res, &errMsg)
-	//if err != nil || errMsg.Message != "" {
-	//	log.Println("Repository: GetIdentityByUser: failed to get identity: ", err)
-	//	return nil, err
-	//}
-
 	var ident IdentityData
 	err = json.Unmarshal(res, &ident)
 	if err != nil {
