@@ -190,6 +190,71 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 	return &response
 }
 
+// GetIdentityByUser ...
+func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity, error) {
+	if key == "" || value == "" {
+		nilKeyOrValueErr := "repository: GetIdentityByUser: key or value is null"
+		log.Println(nilKeyOrValueErr)
+		return nil, fmt.Errorf(nilKeyOrValueErr)
+	}
+	token, err := a.auth0Client.ValidateToken(a.Environment)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	headers := make(map[string]string, 0)
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+	endpoint := a.AffBaseURL + "/affiliation/" + "identity/" + key + "/" + value
+	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("Repository: GetIdentityByUser: Could not get the identity: ", err)
+		return nil, err
+	}
+
+	var ident IdentityData
+	err = json.Unmarshal(res, &ident)
+	if err != nil {
+		return nil, err
+	}
+
+	profileEndpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/get_profile/" + *ident.UUID
+	_, profileRes, err := a.httpClient.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("Repository: GetIdentityByUser: Could not get the identity: ", err)
+		return nil, err
+	}
+
+	var profile UniqueIdentityFullProfile
+	err = json.Unmarshal(profileRes, &profile)
+	if err != nil {
+		return nil, err
+	}
+	var identity AffIdentity
+	identity.UUID = ident.UUID
+	identity.Name = *ident.Name
+	identity.Username = *ident.Username
+	identity.Email = *ident.Email
+	identity.ID = &ident.ID
+
+	identity.IsBot = profile.Profile.IsBot
+	identity.Gender = profile.Profile.Gender
+	identity.GenderACC = profile.Profile.GenderAcc
+
+	if len(profile.Enrollments) > 1 {
+		identity.OrgName = &profile.Enrollments[0].Organization.Name
+		for _, org := range profile.Enrollments {
+			identity.MultiOrgNames = append(identity.MultiOrgNames, org.Organization.Name)
+		}
+	} else if len(profile.Enrollments) == 1 {
+		identity.OrgName = &profile.Enrollments[0].Organization.Name
+		identity.MultiOrgNames = append(identity.MultiOrgNames, profile.Enrollments[0].Organization.Name)
+	}
+
+	return &identity, nil
+
+}
+
 func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, auth0ClientProvider *auth0.ClientProvider, err error) {
 	esClientProvider, err = elastic.NewClientProvider(&elastic.Params{
 		URL:      a.ESCacheURL,
