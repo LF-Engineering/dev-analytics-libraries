@@ -59,9 +59,6 @@ func NewAuth0Client(esCacheURL, esCacheUsername, esCachePassword, env, authGrant
 func (a *ClientProvider) GenerateToken() string {
 	var result Resp
 
-	headers := make(map[string]string, 0)
-	headers["Content-type"] = "application/json"
-
 	payload := map[string]string{
 		"grant_type":    a.AuthGrantType,
 		"client_id":     a.AuthClientID,
@@ -74,7 +71,8 @@ func (a *ClientProvider) GenerateToken() string {
 		fmt.Println(err)
 	}
 
-	_, response, err := a.httpClient.Request(a.AuthURL, "POST", headers, body, nil)
+	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
+	_, response, err := a.httpClient.Request(a.AuthURL, "POST", nil, body, nil)
 	if err != nil {
 		log.Println("GenerateToken", err)
 	}
@@ -92,15 +90,13 @@ func (a *ClientProvider) GenerateToken() string {
 
 // GetToken ...
 func (a *ClientProvider) GetToken(env string) (string, error) {
-	query := make(map[string]interface{}, 0)
-	query["name"] = "token"
-	res, err := a.esClient.Search(strings.TrimSpace("auth0-token-cache-"+env), query)
+	res, err := a.esClient.Search(strings.TrimSpace("auth0-token-cache-"+env), searchTokenQuery)
 	if err != nil {
 		return "", err
 	}
 
 	var e ESTokenSchema
-	err = json.Unmarshal(res, &a)
+	err = json.Unmarshal(res, &e)
 	if err != nil {
 		log.Println("repository: GetOauthToken: could not unmarshal the data", err)
 		return "", err
@@ -138,11 +134,11 @@ func (a *ClientProvider) UpdateAuthToken(env, token string) {
 	fields := fmt.Sprintf(`
 		{
 			"script" : {
-				"source": "ctx._source.Token = '%s'",
+				"source": "ctx._source.token = '%s'",
 				"lang": "painless"
 			}
 	}`, token)
-	query := "Token: AuthToken"
+	query := "name.keyword: AuthToken"
 	res, err := a.esClient.UpdateDocumentByQuery(strings.TrimSpace("auth0-token-cache-"+env), query, fields)
 	if err != nil {
 		log.Println(err)
@@ -204,6 +200,13 @@ func buildServices(a *ClientProvider) (httpClientProvider *http.ClientProvider, 
 		return nil, nil, err
 	}
 
-	httpClientProvider = http.NewClientProvider(60)
+	httpClientProvider = http.NewClientProvider(time.Minute)
 	return
+}
+
+var searchTokenQuery = map[string]interface{}{
+	"size": 1,
+	"query": map[string]interface{}{
+		"match_all": map[string]interface{}{},
+	},
 }
