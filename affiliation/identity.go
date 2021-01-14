@@ -204,9 +204,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	}
 
 	headers := make(map[string]string, 0)
-	headers["Content-type"] = "application/json"
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
-
 	endpoint := a.AffBaseURL + "/affiliation/" + "identity/" + key + "/" + value
 	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
