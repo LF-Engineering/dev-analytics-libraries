@@ -81,7 +81,7 @@ type Enrollments struct {
 	Organization *Organization `json:"organization,omitempty"`
 }
 
-//  Organization ...
+// Organization ...
 type Organization struct {
 	Name string `json:"name,omitempty"`
 }
@@ -96,7 +96,7 @@ type Profile struct {
 	UUID      string  `json:"uuid,omitempty"`
 }
 
-// Identity contains affiliation user Identity
+// AffIdentity contains affiliation user Identity
 type AffIdentity struct {
 	ID            *string `json:"id"`
 	UUID          *string
