@@ -391,11 +391,13 @@ func (p *ClientProvider) Search(index string, query map[string]interface{}) (bit
 	}()
 
 	if res.StatusCode == 200 {
+		var in interface{}
 		// index exists so return true
-		if err = json.NewDecoder(res.Body).Decode(&bites); err != nil {
+		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
 			return
 		}
 
+		bites, err = jsoniter.Marshal(in)
 		return
 	}
 
