@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
 	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
@@ -199,7 +200,7 @@ func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esC
 		return
 	}
 
-	httpClientProvider = http.NewClientProvider(60)
+	httpClientProvider = http.NewClientProvider(time.Minute)
 
 	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL)
 	if err != nil {
