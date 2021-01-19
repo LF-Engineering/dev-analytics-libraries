@@ -271,7 +271,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
-	endpoint := a.AffBaseURL + "/affiliation/" + projectSlug + "/get_profile_by_username/" + username
+	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/get_profile_by_username/" + url.PathEscape(username)
 	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("Repository: GetProfileByUsername: Could not get the profile: ", err)
