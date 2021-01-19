@@ -255,6 +255,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 
 }
 
+// GetProfileByUsername ...
 func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) (*AffIdentity, error) {
 	if username == "" && projectSlug == "" {
 		nilKeyOrValueErr := "repository: GetProfileByUsername: username or projectSlug is null"
@@ -307,6 +308,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	return &identity, nil
 }
 
+// Get Most Recent Org Name where user has multiple ennrollments
 func (a *Affiliation) getUserOrg(enrollments []*Enrollments) *string {
 	var result string
 	var lowest, startTime int64
