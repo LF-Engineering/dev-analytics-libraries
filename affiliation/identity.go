@@ -255,6 +255,78 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 
 }
 
+func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) (*AffIdentity, error) {
+	if username == "" && projectSlug == "" {
+		nilKeyOrValueErr := "repository: GetProfileByUsername: username or projectSlug is null"
+		log.Println(nilKeyOrValueErr)
+		return nil, fmt.Errorf(nilKeyOrValueErr)
+	}
+
+	token, err := a.auth0Client.ValidateToken(a.Environment)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	headers := make(map[string]string, 0)
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+	endpoint := a.AffBaseURL + "/affiliation/" + projectSlug + "/get_profile_by_username/" + username
+	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("Repository: GetProfileByUsername: Could not get the profile: ", err)
+		return nil, err
+	}
+
+	var profile UniqueIdentityFullProfile
+	err = json.Unmarshal(res, &profile)
+	if err != nil {
+		return nil, err
+	}
+	var identity AffIdentity
+
+	identity.UUID = profile.Identities[0].UUID
+	identity.Name = *profile.Identities[0].Name
+	identity.Username = username
+	identity.Email = *profile.Identities[0].Email
+	identity.ID = &profile.Identities[0].ID
+
+	identity.IsBot = profile.Profile.IsBot
+	identity.Gender = profile.Profile.Gender
+	identity.GenderACC = profile.Profile.GenderAcc
+
+	if len(profile.Enrollments) > 1 {
+		identity.OrgName = a.getUserOrg(profile.Enrollments)
+		for _, org := range profile.Enrollments {
+			identity.MultiOrgNames = append(identity.MultiOrgNames, org.Organization.Name)
+		}
+	} else if len(profile.Enrollments) == 1 {
+		identity.OrgName = &profile.Enrollments[0].Organization.Name
+		identity.MultiOrgNames = append(identity.MultiOrgNames, profile.Enrollments[0].Organization.Name)
+	}
+
+	return &identity, nil
+}
+
+func (a *Affiliation) getUserOrg(enrollments []*Enrollments) *string {
+	var result string
+	var lowest, startTime int64
+	now := time.Now()
+
+	for _, enrollment := range enrollments {
+		startTime = now.Unix() - enrollment.Start.Unix()
+
+		if lowest == 0 {
+			lowest = startTime
+			result = enrollment.Organization.Name
+		} else if startTime < lowest {
+			lowest = startTime
+			result = enrollment.Organization.Name
+		}
+	}
+
+	return &result
+}
+
 func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, auth0ClientProvider *auth0.ClientProvider, err error) {
 	esClientProvider, err = elastic.NewClientProvider(&elastic.Params{
 		URL:      a.ESCacheURL,
