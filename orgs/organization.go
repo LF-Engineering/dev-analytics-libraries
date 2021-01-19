@@ -1,0 +1,146 @@
+package orgs
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
+	"net/url"
+	"strings"
+	"time"
+
+	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
+	"github.com/LF-Engineering/dev-analytics-libraries/http"
+)
+
+// Auth0ClientProvider ...
+type Auth0ClientProvider interface {
+	ValidateToken(string) (string, error)
+}
+
+// HTTPClientProvider ...
+type HTTPClientProvider interface {
+	Request(string, string, map[string]string, []byte, map[string]string) (int, []byte, error)
+}
+
+// Org struct
+type Org struct {
+	OrgBaseURL       string
+	ESCacheURL       string
+	ESCacheUsername  string
+	ESCachePassword  string
+	AuthGrantType    string
+	AuthClientID     string
+	AuthClientSecret string
+	AuthAudience     string
+	AuthURL          string
+	Environment      string
+	httpClient       HTTPClientProvider
+	auth0Client      Auth0ClientProvider
+}
+
+// SearchOrganization ...
+func (o *Org) SearchOrganization(name string, pageSize string, offset string) (*SearchOrganizationResponse, error) {
+	if name == "" {
+		log.Println("SearchOrganization: name param is empty")
+		return nil, errors.New("SearchOrganization: name param is empty")
+	}
+	token, err := o.auth0Client.ValidateToken(o.Environment)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	headers := make(map[string]string, 0)
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+
+	if offset == "" {
+		offset = "0"
+	}
+
+	if pageSize == "" {
+		pageSize = "100"
+	}
+	endpoint := o.OrgBaseURL + "/orgs/search?name=" + url.PathEscape(name) + "&pageSize=" + url.PathEscape(pageSize) + "&offset=" + url.PathEscape(offset)
+	_, res, err := o.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("SearchOrganization: Could not get the organization list: ", err)
+		return nil, err
+	}
+	var response SearchOrganizationResponse
+	err = json.Unmarshal(res, &response)
+	if err != nil {
+		log.Println("SearchOrganization: failed to unmarshal SearchOrganizationResponse: ", err)
+		return nil, err
+	}
+	return &response, nil
+}
+
+// LookupOrganization ...
+func (o *Org) LookupOrganization(name string) (*Organization, error) {
+	if name == "" {
+		log.Println("LookupOrganization: name param is empty")
+		return nil, errors.New("LookupOrganization: name param is empty")
+	}
+	token, err := o.auth0Client.ValidateToken(o.Environment)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	headers := make(map[string]string, 0)
+	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
+
+	endpoint := o.OrgBaseURL + "/lookup?name=" + url.PathEscape(name)
+	_, res, err := o.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	if err != nil {
+		log.Println("LookupOrganization: Could not get the organization: ", err)
+		return nil, err
+	}
+
+	var response Organization
+	err = json.Unmarshal(res, &response)
+	if err != nil {
+		log.Println("LookupOrganization: failed to unmarshal LookupOrganizationResponse: ", err)
+		return nil, err
+	}
+	return &response, nil
+}
+
+// NewClient consumes
+// orgBaseURL, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
+func NewClient(orgBaseURL, esCacheURL, esCacheUsername,
+	esCachePassword, env, authGrantType, authClientID, authClientSecret,
+	authAudience, authURL string) (*Org, error) {
+	org := &Org{
+		OrgBaseURL:       orgBaseURL,
+		ESCacheURL:       esCacheURL,
+		ESCacheUsername:  esCacheUsername,
+		ESCachePassword:  esCachePassword,
+		AuthGrantType:    authGrantType,
+		AuthClientID:     authClientID,
+		AuthClientSecret: authClientSecret,
+		AuthAudience:     authAudience,
+		AuthURL:          authURL,
+		Environment:      env,
+	}
+
+	httpClientProvider, auth0ClientProvider, err := buildServices(org)
+	if err != nil {
+		return nil, err
+	}
+
+	org.httpClient = httpClientProvider
+	org.auth0Client = auth0ClientProvider
+
+	return org, nil
+}
+
+func buildServices(o *Org) (*http.ClientProvider, *auth0.ClientProvider, error) {
+	httpClientProvider := http.NewClientProvider(time.Minute)
+
+	auth0ClientProvider, err := auth0.NewAuth0Client(o.ESCacheURL, o.ESCacheUsername, o.ESCachePassword, o.Environment, o.AuthGrantType, o.AuthClientID, o.AuthClientSecret, o.AuthAudience, o.AuthURL)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return httpClientProvider, auth0ClientProvider, nil
+}
