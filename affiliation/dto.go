@@ -79,6 +79,9 @@ type UniqueIdentityFullProfile struct {
 // Enrollments ...
 type Enrollments struct {
 	Organization *Organization `json:"organization,omitempty"`
+	End          time.Time     `json:"end"`
+	ID           int           `json:"id"`
+	Start        time.Time     `json:"start"`
 }
 
 // Organization ...
