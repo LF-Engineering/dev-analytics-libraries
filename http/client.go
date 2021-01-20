@@ -43,9 +43,11 @@ func (h *ClientProvider) Request(url string, method string, header map[string]st
 	}
 
 	if params != nil {
+		q := req.URL.Query()
 		for k, v := range params {
-			req.URL.Query().Add(k, v)
+			q.Add(k, v)
 		}
+		req.URL.RawQuery = q.Encode()
 	}
 
 	// Do request
