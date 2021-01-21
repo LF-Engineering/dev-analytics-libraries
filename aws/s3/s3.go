@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
+// Manager contains s3 client functionalities
 type Manager struct {
 	bucketName string
 	region     string
