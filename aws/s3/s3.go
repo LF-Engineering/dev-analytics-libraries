@@ -19,6 +19,7 @@ type Manager struct {
 	region     string
 }
 
+// NewManager initiates a new s3 manager
 func NewManager(bucket string, region string) *Manager {
 	return &Manager{
 		bucketName: bucket,
