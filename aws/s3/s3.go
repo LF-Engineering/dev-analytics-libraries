@@ -4,22 +4,21 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"golang.org/x/crypto/sha3"
+	"golang.org/x/crypto/ripemd160"
 )
 
-// Manager ...
 type Manager struct {
 	bucketName string
 	region     string
 }
 
-// NewManager new s3provider manager
 func NewManager(bucket string, region string) *Manager {
 	return &Manager{
 		bucketName: bucket,
@@ -34,13 +33,20 @@ func (m *Manager) Save(payload []byte) error {
 	var timeout time.Duration
 
 	// generating hash and create object name
-	h := sha3.Sum224(payload[:])
-	objName := fmt.Sprintf("%v-%x", time.Now().Unix(), h)
+	md := ripemd160.New()
+	keyName, err := io.WriteString(md, string(payload[:]))
 
-	flag.StringVar(&bucket, "b", m.bucketName, "Bucket name.")
-	flag.StringVar(&key, "k", objName, "Object key name.")
-	flag.DurationVar(&timeout, "d", 0, "Upload timeout.")
-	flag.Parse()
+	objName := fmt.Sprintf("%v-%x", time.Now().Unix(), keyName)
+	b := flag.Lookup("b")
+	k := flag.Lookup("k")
+	d := flag.Lookup("d")
+
+	if b == nil && k == nil && d == nil {
+		flag.StringVar(&bucket, "b", m.bucketName, "Bucket name.")
+		flag.StringVar(&key, "k", objName, "Object key name.")
+		flag.DurationVar(&timeout, "d", 0, "Upload timeout.")
+		flag.Parse()
+	}
 
 	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(m.region)}))
 	svc := s3.New(sess)
@@ -49,12 +55,11 @@ func (m *Manager) Save(payload []byte) error {
 
 	// Uploads the object to S3. The Context will interrupt the request if the
 	// timeout expires.
-	_, err := svc.PutObject(&s3.PutObjectInput{
+	_, err = svc.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(m.bucketName),
-		Key:    aws.String(key),
+		Key:    aws.String(objName),
 		Body:   r,
 	})
-
 	return err
 }
 
@@ -75,7 +80,6 @@ func (m *Manager) GetKeys() ([]string, error) {
 		return true // continue paging
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to list objects for bucket, %s, %v", m.bucketName, err))
 		return nil, err
 	}
 
