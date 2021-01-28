@@ -74,13 +74,13 @@ func TestSearchOrganization(t *testing.T) {
 
 	data := map[string]interface{}{
 		"Data": []map[string]string{
-			map[string]string{
+			{
 				"ID":      "v03fs-3",
 				"Name":    "Linux Foundation, US",
 				"Link":    "linuxfoundation.com",
 				"LogoURL": "linuxfoundationlogo.com/logo.png",
 			},
-			map[string]string{
+			{
 				"ID":      "v03fs-5",
 				"Name":    "Linux Foundation, APAC",
 				"Link":    "linuxfoundation.com",
@@ -113,7 +113,7 @@ func TestSearchOrganizationSpecialChars(t *testing.T) {
 
 	data := map[string]interface{}{
 		"Data": []map[string]string{
-			map[string]string{
+			{
 				"ID":      "v03fs-7",
 				"Name":    "ą ę jest ż",
 				"Link":    "jest.com",
