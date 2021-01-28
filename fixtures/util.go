@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v33/github"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 )
