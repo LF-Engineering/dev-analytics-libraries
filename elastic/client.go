@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -500,4 +501,56 @@ func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]b
 	}
 
 	return resBytes, nil
+}
+
+// ReadWithScroll scrolls through the pages of size given in the query and adds up the scrollID in the result
+// Which is expected in the subsequent function call to get the next page, empty result indicates the end of the page
+func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error)  {
+	var res *esapi.Response
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	if scrollID == "" {
+		var buf bytes.Buffer
+		err = json.NewEncoder(&buf).Encode(query)
+		if err != nil {
+			return err
+		}
+
+		res, err = p.client.Search(
+			p.client.Search.WithIndex(index),
+			p.client.Search.WithBody(&buf),
+			p.client.Search.WithScroll(time.Minute),
+		)
+	} else {
+		res, err = p.client.Scroll(p.client.Scroll.WithScrollID(scrollID), p.client.Scroll.WithScroll(time.Minute))
+	}
+	if err != nil {
+		return err
+	}
+	if res.StatusCode == http.StatusOK {
+		if err = json.NewDecoder(res.Body).Decode(result); err != nil {
+			return err
+		}
+
+		return nil
+	}
+	if res.IsError() {
+		if res.StatusCode == http.StatusNotFound {
+			// index doesn't exist
+			return errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return err
+	}
+	return nil
 }
