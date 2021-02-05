@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -319,7 +320,7 @@ func (p *ClientProvider) Get(index string, query map[string]interface{}, result 
 		}
 	}()
 
-	if res.StatusCode == 200 {
+	if res.StatusCode == http.StatusOK {
 		// index exists so return true
 		if err = json.NewDecoder(res.Body).Decode(result); err != nil {
 			return err
@@ -329,7 +330,7 @@ func (p *ClientProvider) Get(index string, query map[string]interface{}, result 
 	}
 
 	if res.IsError() {
-		if res.StatusCode == 404 {
+		if res.StatusCode == http.StatusNotFound {
 			// index doesn't exist
 			return errors.New("index doesn't exist")
 		}
