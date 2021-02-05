@@ -320,7 +320,7 @@ func (p *ClientProvider) Get(index string, query map[string]interface{}, result 
 		}
 	}()
 
-	if res.StatusCode == http.StatusOK {
+	if res.StatusCode == 200 {
 		// index exists so return true
 		if err = json.NewDecoder(res.Body).Decode(result); err != nil {
 			return err
@@ -330,7 +330,7 @@ func (p *ClientProvider) Get(index string, query map[string]interface{}, result 
 	}
 
 	if res.IsError() {
-		if res.StatusCode == http.StatusNotFound {
+		if res.StatusCode == 404 {
 			// index doesn't exist
 			return errors.New("index doesn't exist")
 		}
@@ -531,7 +531,7 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 	if err != nil {
 		return err
 	}
-	if res.StatusCode == 200 {
+	if res.StatusCode == http.StatusOK {
 		if err = json.NewDecoder(res.Body).Decode(result); err != nil {
 			return err
 		}
@@ -539,7 +539,7 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 		return nil
 	}
 	if res.IsError() {
-		if res.StatusCode == 404 {
+		if res.StatusCode == http.StatusNotFound {
 			// index doesn't exist
 			return errors.New("index doesn't exist")
 		}
