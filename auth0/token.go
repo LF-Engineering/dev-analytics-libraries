@@ -106,8 +106,6 @@ func (a *ClientProvider) GetToken(env string) (string, error) {
 		data := e.Hits.Hits[0]
 		return data.Source.Token, nil
 	}
-	log.Println("GetTokenStringESOutput: ", e.Hits.Hits[0])
-	log.Println("GetToken: could not find the associated token")
 
 	return "", errors.New("GetToken: could not find the associated token")
 }
@@ -155,12 +153,10 @@ func (a *ClientProvider) ValidateToken(env string) (string, error) {
 	}
 
 	if tokenString == "" {
-		log.Println("ValidateToken: token is not there in elasticSearch")
 		authToken = a.GenerateToken()
 		a.CreateAuthToken(env, authToken)
 		return authToken, nil
 	}
-	log.Println("ValidateToken: got the token from ES ")
 	token, err := jwt.Parse(tokenString, nil)
 	if token == nil {
 		log.Println(err)
@@ -180,10 +176,8 @@ func (a *ClientProvider) ValidateToken(env string) (string, error) {
 	now := time.Now()
 
 	if now.Before(tm) {
-		log.Println("ValidateToken: Token is valid")
 		return tokenString, nil
 	}
-	log.Println("ValidateToken: token is expired!")
 	authToken = a.GenerateToken()
 	a.UpdateAuthToken(env, authToken)
 
