@@ -76,7 +76,6 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println(err)
 	}
 	headers := make(map[string]string, 0)
-	headers["Content-type"] = "application/json"
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 
 	queryParams := make(map[string]string, 0)
@@ -111,7 +110,6 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 		log.Println(err)
 	}
 	headers := make(map[string]string, 0)
-	headers["Content-type"] = "application/json"
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 
 	endpoint := a.AffBaseURL + "/affiliation/get_identity/" + uuid
@@ -140,7 +138,6 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 		log.Println(err)
 	}
 	headers := make(map[string]string, 0)
-	headers["Content-type"] = "application/json"
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/enrollments/" + uuid
@@ -170,7 +167,6 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 		log.Println(err)
 	}
 	headers := make(map[string]string, 0)
-	headers["Content-type"] = "application/json"
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/get_profile/" + uuid
