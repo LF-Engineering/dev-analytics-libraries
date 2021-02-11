@@ -335,7 +335,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	return &identity, nil
 }
 
-// Get Most Recent Org Name where user has multiple ennrollments
+// Get Most Recent Org Name where user has multiple enrollments
 func (a *Affiliation) getUserOrg(enrollments []*Enrollments) *string {
 	var result string
 	var lowest, startTime int64
