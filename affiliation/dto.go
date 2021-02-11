@@ -15,7 +15,7 @@ type Identity struct {
 
 // AffiliationsResponse ...
 type AffiliationsResponse struct {
-	Code         string      `json:"Code"`
+	Code         int         `json:"Code"`
 	Message      string      `json:"Message"`
 	Enrollments  interface{} `json:"enrollments"`
 	Identities   interface{} `json:"identities"`
