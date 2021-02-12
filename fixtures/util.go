@@ -68,6 +68,7 @@ func GetYamlFiles() []string {
 	if err != nil {
 		log.Printf("Error listing yaml files: %+v", err)
 	}
+
 	return result
 }
 
@@ -119,7 +120,7 @@ func ParseOrg(endPointName string) string {
 }
 
 // GetGithubRepoList returns the list of repositories for a given endpoint
-func GetGithubRepoList(endPointName string, skipREs []*regexp.Regexp) ([]string, error) {
+func GetGithubRepoList(endPointName string, skipREs []*regexp.Regexp, onlyREs []*regexp.Regexp) ([]string, error) {
 	token := os.Getenv("GITHUB_OAUTH_TOKEN")
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -147,10 +148,13 @@ func GetGithubRepoList(endPointName string, skipREs []*regexp.Regexp) ([]string,
 			org := ParseOrg(endPointName)
 			for _, repo := range repoList {
 				if repo.Name != nil {
-					name := org + "/" + *(repo.Name)
-					if CheckSkipped(endPointName, skipREs, name) {
-						repos = append(repos, *(repo.HTMLURL))
+					name := "/" + org + "/" + *(repo.Name)
+					included := CheckIncluded(endPointName, name, skipREs, onlyREs)
+					if !included {
+						continue
 					}
+					repos = append(repos, *(repo.HTMLURL))
+
 				}
 			}
 		}
@@ -162,15 +166,25 @@ func GetGithubRepoList(endPointName string, skipREs []*regexp.Regexp) ([]string,
 	return repos, nil
 }
 
-// CheckSkipped verifies whether a particular repo is in the skipped list or not.
-func CheckSkipped(endPointName string, skipREs []*regexp.Regexp, repo string) bool {
-	included := true
+// CheckIncluded verifies whether a particular repo is in the skipped list or not.
+func CheckIncluded(endPointName string, repo string, skipREs []*regexp.Regexp, onlyREs []*regexp.Regexp) bool {
 	for _, skipRE := range skipREs {
 		if skipRE.MatchString(repo) {
-			included = false
 			log.Printf("%s: skipped %s (%v)\n", endPointName, repo, skipRE)
+			return false
+		}
+	}
+	if len(onlyREs) == 0 {
+		return true
+	}
+	included := false
+	for _, onlyRE := range onlyREs {
+		if onlyRE.MatchString(repo) {
+			log.Printf("%s: included %s (%v)\n", endPointName, repo, onlyRE)
+			included = true
 			break
 		}
 	}
+
 	return included
 }

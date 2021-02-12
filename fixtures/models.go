@@ -17,7 +17,9 @@ type Fixture struct {
 					Type string `yaml:"type"`
 				} `yaml:"flags"`
 				Skip    []string         `yaml:"skip"`
+				Only    []string         `yaml:"only"`
 				SkipREs []*regexp.Regexp `yaml:"-"`
+				OnlyREs []*regexp.Regexp `yaml:"-"`
 			} `yaml:"endpoints"`
 			Flags interface{} `yaml:"flags"`
 		} `yaml:"projects,omitempty"`
