@@ -13,6 +13,9 @@ import (
 	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
 
+var unknown string = "Unknown"
+var genderAcc int64 = 0
+
 // Affiliations interface
 type Affiliations interface {
 	AddIdentity(identity *Identity) bool
@@ -309,6 +312,8 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 
 	if profileIdentity.Name != nil {
 		identity.Name = *profileIdentity.Name
+	} else {
+		identity.Name = unknown
 	}
 
 	identity.Username = username
@@ -316,11 +321,23 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	if profileIdentity.Email != nil {
 		identity.Email = *profileIdentity.Email
 	}
+
 	identity.ID = &profileIdentity.ID
 
 	identity.IsBot = profile.Profile.IsBot
-	identity.Gender = profile.Profile.Gender
-	identity.GenderACC = profile.Profile.GenderAcc
+
+	if profile.Profile.Gender == nil {
+		identity.Gender = profile.Profile.Gender
+		identity.GenderACC = profile.Profile.GenderAcc
+	} else {
+		identity.Gender = &unknown
+		identity.GenderACC = &genderAcc
+	}
+
+	if profile.Enrollments == nil {
+		identity.OrgName = &unknown
+		identity.MultiOrgNames = make([]string, 0)
+	}
 
 	if len(profile.Enrollments) > 1 {
 		identity.OrgName = a.getUserOrg(profile.Enrollments)
