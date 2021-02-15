@@ -2,6 +2,7 @@ package affiliation
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -294,10 +295,14 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/get_profile_by_username/" + url.PathEscape(username)
-	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	statusCode, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetProfileByUsername: Could not get the profile: ", err)
 		return nil, err
+	}
+
+	if statusCode != 200 {
+		return nil, errors.New("User not found")
 	}
 
 	var profile UniqueIdentityFullProfile
