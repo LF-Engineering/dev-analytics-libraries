@@ -3,7 +3,6 @@ package auth0
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -123,7 +122,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Println(err)
+		log.Println("generateToken : unmarshal payload error :", err)
 	}
 
 	// prevent new call if the last call issued since less than one hour
@@ -134,6 +133,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
 	_, response, err := a.httpClient.Request(a.AuthURL, "POST", nil, body, nil)
 	if err != nil {
+		// todo : notify to slack
 		log.Println("GenerateToken", err)
 	}
 
@@ -156,7 +156,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 
 // GetToken ...
 func (a *ClientProvider) getCachedToken() (string, error) {
-	res, err := a.esClient.Search(strings.TrimSpace("auth0-token-cache-"+a.Environment), searchTokenQuery)
+	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +186,7 @@ func (a *ClientProvider) createAuthToken(token string) error {
 		CreatedAt: time.Now().UTC(),
 	}
 	doc, _ := json.Marshal(at)
-	res, err := a.esClient.CreateDocument(strings.TrimSpace("auth0-token-cache-"+a.Environment), "token", doc)
+	res, err := a.esClient.CreateDocument(strings.TrimSpace(auth0TokenCache+a.Environment), "token", doc)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
@@ -200,6 +200,15 @@ var searchTokenQuery = map[string]interface{}{
 	"size": 1,
 	"query": map[string]interface{}{
 		"match_all": map[string]interface{}{},
+	},
+}
+
+var searchCacheQuery = map[string]interface{}{
+	"size": 1,
+	"query": map[string]interface{}{
+		"term": map[string]interface{}{
+			"_id": lastTokenDate,
+		},
 	},
 }
 
@@ -220,7 +229,7 @@ func (a *ClientProvider) createLastActionDate() error {
 		Date: time.Now().UTC(),
 	}
 	doc, _ := json.Marshal(s)
-	_, err := a.esClient.CreateDocument(strings.TrimSpace("last-auth0-token-request-"+a.Environment), "last-token-date", doc)
+	_, err := a.esClient.CreateDocument(strings.TrimSpace(lastAuth0TokenRequest+a.Environment), lastTokenDate, doc)
 	if err != nil {
 		log.Println("could not write the data to elastic")
 		return err
@@ -231,7 +240,7 @@ func (a *ClientProvider) createLastActionDate() error {
 
 func (a *ClientProvider) getLastActionDate() (time.Time, error) {
 	now := time.Now().UTC()
-	res, err := a.esClient.Search(strings.TrimSpace("last-auth0-token-request-"+a.Environment), searchTokenQuery)
+	res, err := a.esClient.Search(strings.TrimSpace(lastAuth0TokenRequest+a.Environment), searchCacheQuery)
 	if err != nil && err.Error() == "index doesn't exist" {
 		return now.Add(-2 * time.Hour), nil
 	}
