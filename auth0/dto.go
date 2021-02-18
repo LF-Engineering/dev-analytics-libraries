@@ -46,6 +46,7 @@ type ESTokenSchema struct {
 	} `json:"hits"`
 }
 
+// LastActionSchema...
 type LastActionSchema struct {
 	Took     int  `json:"took"`
 	TimedOut bool `json:"timed_out"`

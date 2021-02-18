@@ -70,6 +70,7 @@ func NewAuth0Client(esCacheURL,
 	return auth0, nil
 }
 
+// GetToken ...
 func (a *ClientProvider) GetToken() (string, error) {
 	// get cached token
 	var authToken string

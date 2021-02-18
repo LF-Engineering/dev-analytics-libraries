@@ -42,8 +42,8 @@ func testNormalScenario(t *testing.T) {
 
 	genPayload := `{"audience":"","client_id":"","client_secret":"","grant_type":""}`
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
-	genResJson, _ := json.Marshal(genRes)
-	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJson, nil)
+	genResJSON, _ := json.Marshal(genRes)
+	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -90,8 +90,8 @@ func testExpiredToken(t *testing.T) {
 
 	genPayload := `{"audience":"","client_id":"","client_secret":"","grant_type":""}`
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
-	genResJson, _ := json.Marshal(genRes)
-	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJson, nil)
+	genResJSON, _ := json.Marshal(genRes)
+	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -139,8 +139,8 @@ func testGeneratingTwoTokensWithinHour(t *testing.T) {
 
 	genPayload := `{"audience":"","client_id":"","client_secret":"","grant_type":""}`
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
-	genResJson, _ := json.Marshal(genRes)
-	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJson, nil)
+	genResJSON, _ := json.Marshal(genRes)
+	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -179,8 +179,8 @@ func testEmptyTokenCache(t *testing.T) {
 
 	genPayload := `{"audience":"","client_id":"","client_secret":"","grant_type":""}`
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
-	genResJson, _ := json.Marshal(genRes)
-	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJson, nil)
+	genResJSON, _ := json.Marshal(genRes)
+	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -219,8 +219,8 @@ func testTokenWithGetLastRequestDateError(t *testing.T) {
 
 	genPayload := `{"audience":"","client_id":"","client_secret":"","grant_type":""}`
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
-	genResJson, _ := json.Marshal(genRes)
-	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJson, nil)
+	genResJSON, _ := json.Marshal(genRes)
+	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
 
 	// act
 	srv, err := NewAuth0Client("",
