@@ -57,7 +57,7 @@ func TestLookupOrganization(t *testing.T) {
 	_ = json.NewEncoder(buf).Encode(data)
 	dataBytes, _ := ioutil.ReadAll(buf)
 
-	auth0ClientProvider.On("ValidateToken", "test").Return(token, nil)
+	auth0ClientProvider.On("GetToken").Return(token, nil)
 	httpClientProvider.On("Request", lookupEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := orgStruct.LookupOrganization(orgName)
@@ -94,7 +94,7 @@ func TestSearchOrganization(t *testing.T) {
 	_ = json.NewEncoder(buf).Encode(data)
 	dataBytes, _ := ioutil.ReadAll(buf)
 
-	auth0ClientProvider.On("ValidateToken", "test").Return(token, nil)
+	auth0ClientProvider.On("GetToken").Return(token, nil)
 	httpClientProvider.On("Request", searchEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := orgStruct.SearchOrganization(orgName, pageSize, offset)
@@ -127,7 +127,7 @@ func TestSearchOrganizationSpecialChars(t *testing.T) {
 	_ = json.NewEncoder(buf).Encode(data)
 	dataBytes, _ := ioutil.ReadAll(buf)
 
-	auth0ClientProvider.On("ValidateToken", "test").Return(token, nil)
+	auth0ClientProvider.On("GetToken").Return(token, nil)
 	httpClientProvider.On("Request", searchEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := orgStruct.SearchOrganization(orgName, pageSize, offset)
