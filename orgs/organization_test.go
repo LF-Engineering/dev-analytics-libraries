@@ -18,9 +18,10 @@ const (
 )
 
 var (
-	httpClientProvider  = &mocks.HTTPClientProvider{}
-	auth0ClientProvider = &mocks.Auth0ClientProvider{}
-	orgStruct           = &Org{
+	httpClientProvider    = &mocks.HTTPClientProvider{}
+	auth0ClientProvider   = &mocks.Auth0ClientProvider{}
+	elasticClientProvider = &mocks.ESClientProvider{}
+	orgStruct             = &Org{
 		os.Getenv("ORG_SERVICE_ENDPOINT"),
 		os.Getenv("ELASTIC_CACHE_URL"),
 		os.Getenv("ELASTIC_CACHE_USERNAME"),
@@ -33,6 +34,7 @@ var (
 		"test",
 		httpClientProvider,
 		auth0ClientProvider,
+		elasticClientProvider,
 	}
 
 	token   = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI"
