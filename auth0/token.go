@@ -15,6 +15,19 @@ import (
 	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
 
+// HTTPClientProvider used in connecting to remote http server
+type HTTPClientProvider interface {
+	Request(url string, method string, header map[string]string, body []byte, params map[string]string) (statusCode int, resBody []byte, err error)
+}
+
+// ESClientProvider used in connecting to ES server
+type ESClientProvider interface {
+	CreateDocument(index, documentID string, body []byte) ([]byte, error)
+	Search(index string, query map[string]interface{}) (bites []byte, err error)
+	CreateIndex(index string, body []byte) ([]byte, error)
+	Get(index string, query map[string]interface{}, result interface{}) (err error)
+}
+
 // ClientProvider ...
 type ClientProvider struct {
 	ESCacheURL       string
@@ -26,8 +39,8 @@ type ClientProvider struct {
 	AuthAudience     string
 	AuthURL          string
 	Environment      string
-	httpClient       *http.ClientProvider
-	esClient         *elastic.ClientProvider
+	httpClient       HTTPClientProvider
+	esClient         ESClientProvider
 }
 
 // NewAuth0Client ...
