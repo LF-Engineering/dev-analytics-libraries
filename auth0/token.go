@@ -5,14 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-
-	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
-	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
 
 // HTTPClientProvider used in connecting to remote http server
@@ -23,9 +19,9 @@ type HTTPClientProvider interface {
 // ESClientProvider used in connecting to ES server
 type ESClientProvider interface {
 	CreateDocument(index, documentID string, body []byte) ([]byte, error)
-	Search(index string, query map[string]interface{}) (bites []byte, err error)
+	Search(index string, query map[string]interface{}) ([]byte, error)
 	CreateIndex(index string, body []byte) ([]byte, error)
-	Get(index string, query map[string]interface{}, result interface{}) (err error)
+	Get(index string, query map[string]interface{}, result interface{}) error
 }
 
 // ClientProvider ...
@@ -38,13 +34,25 @@ type ClientProvider struct {
 	AuthClientSecret string
 	AuthAudience     string
 	AuthURL          string
+	AuthSecret       string
 	Environment      string
 	httpClient       HTTPClientProvider
 	esClient         ESClientProvider
 }
 
 // NewAuth0Client ...
-func NewAuth0Client(esCacheURL, esCacheUsername, esCachePassword, env, authGrantType, authClientID, authClientSecret, authAudience, authURL string) (*ClientProvider, error) {
+func NewAuth0Client(esCacheURL,
+	esCacheUsername,
+	esCachePassword,
+	env,
+	authGrantType,
+	authClientID,
+	authClientSecret,
+	authAudience,
+	authURL string,
+	authSecret string,
+	httpClient HTTPClientProvider,
+	esClient ESClientProvider) (*ClientProvider, error) {
 	auth0 := &ClientProvider{
 		ESCacheURL:       esCacheURL,
 		ESCacheUsername:  esCacheUsername,
@@ -54,24 +62,19 @@ func NewAuth0Client(esCacheURL, esCacheUsername, esCachePassword, env, authGrant
 		AuthClientSecret: authClientSecret,
 		AuthAudience:     authAudience,
 		AuthURL:          authURL,
+		AuthSecret:       authSecret,
 		Environment:      env,
+		httpClient:       httpClient,
+		esClient:         esClient,
 	}
-
-	httpClientProvider, esClientProvider, err := buildServices(auth0)
-	if err != nil {
-		return nil, err
-	}
-
-	auth0.esClient = esClientProvider
-	auth0.httpClient = httpClientProvider
 
 	return auth0, nil
 }
 
-func (a *ClientProvider) GetToken(env string) (string, error) {
+func (a *ClientProvider) GetToken() (string, error) {
 	// get cached token
 	var authToken string
-	cachedToken, err := a.getCachedToken(env)
+	cachedToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -81,7 +84,7 @@ func (a *ClientProvider) GetToken(env string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		err := a.createAuthToken(env, authToken)
+		err := a.createAuthToken(authToken)
 
 		return authToken, err
 	}
@@ -96,7 +99,10 @@ func (a *ClientProvider) GetToken(env string) (string, error) {
 		return "", err
 	}
 
-	err = a.createAuthToken(env, authToken)
+	go func() {
+		err = a.createAuthToken(authToken)
+		log.Println(err)
+	}()
 
 	return authToken, err
 }
@@ -107,6 +113,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	payload := map[string]string{
 		"grant_type":    a.AuthGrantType,
 		"client_id":     a.AuthClientID,
@@ -140,7 +147,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}
 
 	go func() {
-		err := a.createLastActionDate(a.Environment)
+		err = a.createLastActionDate()
 		log.Println(err)
 	}()
 
@@ -148,8 +155,8 @@ func (a *ClientProvider) generateToken() (string, error) {
 }
 
 // GetToken ...
-func (a *ClientProvider) getCachedToken(env string) (string, error) {
-	res, err := a.esClient.Search(strings.TrimSpace("auth0-token-cache-"+env), searchTokenQuery)
+func (a *ClientProvider) getCachedToken() (string, error) {
+	res, err := a.esClient.Search(strings.TrimSpace("auth0-token-cache-"+a.Environment), searchTokenQuery)
 	if err != nil {
 		return "", err
 	}
@@ -171,15 +178,15 @@ func (a *ClientProvider) getCachedToken(env string) (string, error) {
 
 // CreateAuthToken accepts
 //  esCacheURL, esCacheUsername, esCachePassword, Token
-func (a *ClientProvider) createAuthToken(env, Token string) error {
+func (a *ClientProvider) createAuthToken(token string) error {
 	log.Println("creating new auth token")
 	at := AuthToken{
 		Name:      "AuthToken",
-		Token:     Token,
+		Token:     token,
 		CreatedAt: time.Now().UTC(),
 	}
 	doc, _ := json.Marshal(at)
-	res, err := a.esClient.CreateDocument(strings.TrimSpace("auth0-token-cache-"+env), "token", doc)
+	res, err := a.esClient.CreateDocument(strings.TrimSpace("auth0-token-cache-"+a.Environment), "token", doc)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
@@ -187,20 +194,6 @@ func (a *ClientProvider) createAuthToken(env, Token string) error {
 
 	log.Println("createAuthToken: put in ES ", string(res))
 	return nil
-}
-
-func buildServices(a *ClientProvider) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, err error) {
-	esClientProvider, err = elastic.NewClientProvider(&elastic.Params{
-		URL:      a.ESCacheURL,
-		Username: a.ESCacheUsername,
-		Password: a.ESCachePassword,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	httpClientProvider = http.NewClientProvider(time.Minute)
-	return
 }
 
 var searchTokenQuery = map[string]interface{}{
@@ -211,42 +204,23 @@ var searchTokenQuery = map[string]interface{}{
 }
 
 func (a *ClientProvider) isValid(token string) bool {
-	t, err := jwt.Parse(token, nil)
+	t, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) { return []byte(a.AuthSecret), nil })
 	if err != nil || !t.Valid {
 		log.Println(err)
 		return false
 	}
 
-	claims, _ := t.Claims.(jwt.MapClaims)
-	str := fmt.Sprintf("%v", claims["exp"])
-	fl, _ := strconv.ParseFloat(str, 64)
-	i := int64(fl)
-	s := strconv.Itoa(int(i))
-	i, err = strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-
-	tm := time.Unix(i, 0)
-	now := time.Now()
-
-	// return true token if valid
-	if now.Before(tm) {
-		return true
-	}
-
-	return false
+	return t.Valid
 }
 
-func (a *ClientProvider) createLastActionDate(env string) error {
+func (a *ClientProvider) createLastActionDate() error {
 	s := struct {
 		Date time.Time `json:"date"`
 	}{
 		Date: time.Now().UTC(),
 	}
 	doc, _ := json.Marshal(s)
-	_, err := a.esClient.CreateDocument(strings.TrimSpace("last-auth0-token-request-"+env), "token", doc)
+	_, err := a.esClient.CreateDocument(strings.TrimSpace("last-auth0-token-request-"+a.Environment), "last-token-date", doc)
 	if err != nil {
 		log.Println("could not write the data to elastic")
 		return err
@@ -258,9 +232,13 @@ func (a *ClientProvider) createLastActionDate(env string) error {
 func (a *ClientProvider) getLastActionDate() (time.Time, error) {
 	now := time.Now().UTC()
 	res, err := a.esClient.Search(strings.TrimSpace("last-auth0-token-request-"+a.Environment), searchTokenQuery)
+	if err != nil && err.Error() == "index doesn't exist" {
+		return now.Add(-2 * time.Hour), nil
+	}
 	if err != nil {
 		return now, err
 	}
+
 	var e LastActionSchema
 	err = json.Unmarshal(res, &e)
 	if err != nil {
