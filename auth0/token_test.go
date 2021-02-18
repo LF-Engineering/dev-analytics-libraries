@@ -15,7 +15,7 @@ func TestGetToken(t *testing.T) {
 	t.Run("Test Normal Scenario", testNormalScenario)
 	t.Run("Test Get Token without Cached token", testEmptyTokenCache)
 	t.Run("Test Expired Token", testExpiredToken)
-	t.Run("Test Generating More Than Token within Hour", testGeneratingTwoTokensWithinHour)
+	t.Run("Test Generating More Than Token within one Hour", testGeneratingTwoTokensWithinHour)
 	t.Run("Test with Get Last token Request Date Error", testTokenWithGetLastRequestDateError)
 }
 
