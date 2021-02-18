@@ -75,7 +75,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println("AddIdentity: Identity is nil")
 		return false
 	}
-	token, err := a.auth0Client.ValidateToken(a.Environment)
+	token, err := a.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -110,7 +110,7 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 		log.Println("GetIdentity: uuid is empty")
 		return nil
 	}
-	token, err := a.auth0Client.ValidateToken(a.Environment)
+	token, err := a.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -138,7 +138,7 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0Client.ValidateToken(a.Environment)
+	token, err := a.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -167,7 +167,7 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0Client.ValidateToken(a.Environment)
+	token, err := a.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -198,7 +198,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		log.Println(nilKeyOrValueErr)
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
-	token, err := a.auth0Client.ValidateToken(a.Environment)
+	token, err := a.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -286,7 +286,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
 
-	token, err := a.auth0Client.ValidateToken(a.Environment)
+	token, err := a.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -390,7 +390,7 @@ func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esC
 
 	httpClientProvider = http.NewClientProvider(time.Minute)
 
-	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL)
+	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL, "", a.httpClient, a.esClient)
 	if err != nil {
 		return
 	}
