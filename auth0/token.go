@@ -88,7 +88,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 
 		return authToken, err
 	}
-	// check token validate
+	// check token validity
 	if a.isValid(cachedToken) {
 		return authToken, nil
 	}
