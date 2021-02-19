@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/LF-Engineering/dev-analytics-libraries/slack"
 
 	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
 	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
@@ -389,8 +392,9 @@ func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esC
 	}
 
 	httpClientProvider = http.NewClientProvider(time.Minute)
-
-	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL, "", a.httpClient, a.esClient)
+	webhookURL := os.Getenv("SLACK_WEBHOOK_URL")
+	slackProvider := slack.New(webhookURL)
+	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL, "", a.httpClient, a.esClient, &slackProvider)
 	if err != nil {
 		return
 	}
