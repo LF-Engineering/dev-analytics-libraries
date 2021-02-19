@@ -8,10 +8,6 @@ import (
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
-	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
-	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
 
 var unknown string = "Unknown"
@@ -22,58 +18,56 @@ type Affiliations interface {
 	AddIdentity(identity *Identity) bool
 }
 
+// HTTPClientProvider used in connecting to remote http server
+type HTTPClientProvider interface {
+	Request(url string, method string, header map[string]string, body []byte, params map[string]string) (statusCode int, resBody []byte, err error)
+}
+
+// ESClientProvider used in connecting to ES server
+type ESClientProvider interface {
+	CreateDocument(index, documentID string, body []byte) ([]byte, error)
+	Search(index string, query map[string]interface{}) ([]byte, error)
+	CreateIndex(index string, body []byte) ([]byte, error)
+	Get(index string, query map[string]interface{}, result interface{}) error
+}
+
 // SlackProvider ...
 type SlackProvider interface {
 	SendText(text string) error
 }
 
+// Auth0ClientProvider ...
+type Auth0ClientProvider interface {
+	GetToken() (string, error)
+}
+
 // Affiliation struct
 type Affiliation struct {
-	AffBaseURL       string
-	ProjectSlug      string
-	ESCacheURL       string
-	ESCacheUsername  string
-	ESCachePassword  string
-	AuthGrantType    string
-	AuthClientID     string
-	AuthClientSecret string
-	AuthAudience     string
-	AuthURL          string
-	Environment      string
-	httpClient       *http.ClientProvider
-	esClient         *elastic.ClientProvider
-	auth0Client      *auth0.ClientProvider
-	AuthSecret       string
-	slackProvider    SlackProvider
+	AffBaseURL          string
+	ProjectSlug         string
+	httpClientProvider  HTTPClientProvider
+	esClientProvider    ESClientProvider
+	auth0ClientProvider Auth0ClientProvider
+	AuthSecret          string
+	slackProvider       SlackProvider
 }
 
 // NewAffiliationsClient consumes
 //  affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
-func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env, authGrantType, authClientID, authClientSecret, authAudience, authURL string, authSecret string, slackProvider SlackProvider) (*Affiliation, error) {
+func NewAffiliationsClient(affBaseURL string,
+	projectSlug string,
+	httpClientProvider HTTPClientProvider,
+	esClientProvider ESClientProvider,
+	auth0ClientPrivder Auth0ClientProvider,
+	slackProvider SlackProvider) (*Affiliation, error) {
 	aff := &Affiliation{
-		AffBaseURL:       affBaseURL,
-		ProjectSlug:      projectSlug,
-		ESCacheURL:       esCacheURL,
-		ESCacheUsername:  esCacheUsername,
-		ESCachePassword:  esCachePassword,
-		AuthGrantType:    authGrantType,
-		AuthClientID:     authClientID,
-		AuthClientSecret: authClientSecret,
-		AuthAudience:     authAudience,
-		AuthURL:          authURL,
-		Environment:      env,
-		AuthSecret:       authSecret,
-		slackProvider:    slackProvider,
+		AffBaseURL:          affBaseURL,
+		ProjectSlug:         projectSlug,
+		httpClientProvider:  httpClientProvider,
+		esClientProvider:    esClientProvider,
+		auth0ClientProvider: auth0ClientPrivder,
+		slackProvider:       slackProvider,
 	}
-
-	httpClientProvider, esClientProvider, auth0ClientProvider, err := buildServices(aff)
-	if err != nil {
-		return nil, err
-	}
-
-	aff.esClient = esClientProvider
-	aff.httpClient = httpClientProvider
-	aff.auth0Client = auth0ClientProvider
 
 	return aff, nil
 }
@@ -84,7 +78,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println("AddIdentity: Identity is nil")
 		return false
 	}
-	token, err := a.auth0Client.GetToken()
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -99,7 +93,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	queryParams["id"] = identity.ID
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
-	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
+	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
 	if err != nil {
 		log.Println("AddIdentity: Could not insert the identity: ", err)
 		return false
@@ -119,7 +113,7 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 		log.Println("GetIdentity: uuid is empty")
 		return nil
 	}
-	token, err := a.auth0Client.GetToken()
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -128,7 +122,7 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 
 	endpoint := a.AffBaseURL + "/affiliation/get_identity/" + uuid
 
-	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetIdentity: Could not get the identity: ", err)
 		return nil
@@ -147,7 +141,7 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0Client.GetToken()
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -156,7 +150,7 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/enrollments/" + uuid
 
-	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetOrganizations: Could not get the organizations: ", err)
 		return nil
@@ -176,7 +170,7 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0Client.GetToken()
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -185,7 +179,7 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/get_profile/" + uuid
 
-	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetProfile: Could not get the profile: ", err)
 		return nil
@@ -207,7 +201,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		log.Println(nilKeyOrValueErr)
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
-	token, err := a.auth0Client.GetToken()
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -216,7 +210,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 	endpoint := a.AffBaseURL + "/affiliation/" + "identity/" + key + "/" + value
-	_, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetIdentityByUser: Could not get the identity: ", err)
 		return nil, err
@@ -236,7 +230,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	}
 
 	profileEndpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/get_profile/" + *ident.UUID
-	_, profileRes, err := a.httpClient.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
+	_, profileRes, err := a.httpClientProvider.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetIdentityByUser: Could not get the identity: ", err)
 		return nil, err
@@ -295,7 +289,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
 
-	token, err := a.auth0Client.GetToken()
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -304,7 +298,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/get_profile_by_username/" + url.PathEscape(username)
-	statusCode, res, err := a.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("GetProfileByUsername: Could not get the profile: ", err)
 		return nil, err
@@ -385,24 +379,4 @@ func (a *Affiliation) getUserOrg(enrollments []*Enrollments) *string {
 	}
 
 	return &result
-}
-
-func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esClientProvider *elastic.ClientProvider, auth0ClientProvider *auth0.ClientProvider, err error) {
-	esClientProvider, err = elastic.NewClientProvider(&elastic.Params{
-		URL:      a.ESCacheURL,
-		Username: a.ESCacheUsername,
-		Password: a.ESCachePassword,
-	})
-	if err != nil {
-		return
-	}
-
-	httpClientProvider = http.NewClientProvider(time.Minute)
-
-	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL, a.AuthSecret, a.httpClient, a.esClient, a.slackProvider)
-	if err != nil {
-		return
-	}
-
-	return
 }
