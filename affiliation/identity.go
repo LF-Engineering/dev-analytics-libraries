@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
 	"strings"
 	"time"
-
-	"github.com/LF-Engineering/dev-analytics-libraries/slack"
 
 	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
 	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
@@ -23,6 +20,11 @@ var genderAcc int64 = 0
 // Affiliations interface
 type Affiliations interface {
 	AddIdentity(identity *Identity) bool
+}
+
+// SlackProvider ...
+type SlackProvider interface {
+	SendText(text string) error
 }
 
 // Affiliation struct
@@ -41,11 +43,13 @@ type Affiliation struct {
 	httpClient       *http.ClientProvider
 	esClient         *elastic.ClientProvider
 	auth0Client      *auth0.ClientProvider
+	AuthSecret       string
+	slackProvider    SlackProvider
 }
 
 // NewAffiliationsClient consumes
 //  affBaseURL, projectSlug, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
-func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env, authGrantType, authClientID, authClientSecret, authAudience, authURL string) (*Affiliation, error) {
+func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername, esCachePassword, env, authGrantType, authClientID, authClientSecret, authAudience, authURL string, authSecret string, slackProvider SlackProvider) (*Affiliation, error) {
 	aff := &Affiliation{
 		AffBaseURL:       affBaseURL,
 		ProjectSlug:      projectSlug,
@@ -58,6 +62,8 @@ func NewAffiliationsClient(affBaseURL, projectSlug, esCacheURL, esCacheUsername,
 		AuthAudience:     authAudience,
 		AuthURL:          authURL,
 		Environment:      env,
+		AuthSecret:       authSecret,
+		slackProvider:    slackProvider,
 	}
 
 	httpClientProvider, esClientProvider, auth0ClientProvider, err := buildServices(aff)
@@ -392,9 +398,8 @@ func buildServices(a *Affiliation) (httpClientProvider *http.ClientProvider, esC
 	}
 
 	httpClientProvider = http.NewClientProvider(time.Minute)
-	webhookURL := os.Getenv("SLACK_WEBHOOK_URL")
-	slackProvider := slack.New(webhookURL)
-	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL, "", a.httpClient, a.esClient, &slackProvider)
+
+	auth0ClientProvider, err = auth0.NewAuth0Client(a.ESCacheURL, a.ESCacheUsername, a.ESCachePassword, a.Environment, a.AuthGrantType, a.AuthClientID, a.AuthClientSecret, a.AuthAudience, a.AuthURL, a.AuthSecret, a.httpClient, a.esClient, a.slackProvider)
 	if err != nil {
 		return
 	}
