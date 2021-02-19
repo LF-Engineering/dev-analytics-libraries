@@ -24,6 +24,7 @@ func testNormalScenario(t *testing.T) {
 	// arrange
 	httpClientMock := &mocks.HTTPClientProvider{}
 	esClientMock := &mocks.ESClientProvider{}
+	slackClientMock := &mocks.SlackProvider{}
 	tokenRes := `{
 "hits": {
 "hits": [{"_index":"","_type":"","_id": "","_score":0,"_source":{"name": "", "token":"eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjc5MjUwMTYyOTV9.gPG_YA_q7An0tNtFYMEQvXJ--B-nP07UbYshQljrdMc"}}]
@@ -57,7 +58,8 @@ func testNormalScenario(t *testing.T) {
 		"localhost",
 		"xh02agyyaqaj07et5g0uatt15em23j7v",
 		httpClientMock,
-		esClientMock)
+		esClientMock,
+		slackClientMock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,6 +74,7 @@ func testExpiredToken(t *testing.T) {
 	// arrange
 	httpClientMock := &mocks.HTTPClientProvider{}
 	esClientMock := &mocks.ESClientProvider{}
+	slackClientMock := &mocks.SlackProvider{}
 	tokenRes := `{
 "hits": {
 "hits": [{"_index":"","_type":"","_id": "","_score":0,"_source":{"name": "", "token":"eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODIwMzk0OTV9.GK_gIJg4mO_8-vfJAkNGKIU4MC1oCYjsJbKidnQuw5Y"}}]
@@ -89,9 +92,10 @@ func testExpiredToken(t *testing.T) {
 	esClientMock.On("CreateDocument", "auth0-token-cache-test", "token", mock.Anything).Return(nil, nil)
 
 	genPayload := `{"audience":"","client_id":"","client_secret":"","grant_type":""}`
-	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
+	genRes := &Resp{AccessToken: "eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjc5MjUwMTYyOTV9.gPG_YA_q7An0tNtFYMEQvXJ--B-nP07UbYshQljrdMc", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
 	genResJSON, _ := json.Marshal(genRes)
 	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
+	slackClientMock.On("SendText", "created token is not valid").Return(nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -105,7 +109,8 @@ func testExpiredToken(t *testing.T) {
 		"localhost",
 		"xh02agyyaqaj07et5g0uatt15em23j7v",
 		httpClientMock,
-		esClientMock)
+		esClientMock,
+		slackClientMock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -120,6 +125,7 @@ func testGeneratingTwoTokensWithinHour(t *testing.T) {
 	// arrange
 	httpClientMock := &mocks.HTTPClientProvider{}
 	esClientMock := &mocks.ESClientProvider{}
+	slackClientMock := &mocks.SlackProvider{}
 	tokenRes := `{
 "hits": {
 "hits": [{"_index":"","_type":"","_id": "","_score":0,"_source":{"name": "", "token":"eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODIwMzk0OTV9.GK_gIJg4mO_8-vfJAkNGKIU4MC1oCYjsJbKidnQuw5Y"}}]
@@ -154,7 +160,8 @@ func testGeneratingTwoTokensWithinHour(t *testing.T) {
 		"localhost",
 		"xh02agyyaqaj07et5g0uatt15em23j7v",
 		httpClientMock,
-		esClientMock)
+		esClientMock,
+		slackClientMock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -169,6 +176,7 @@ func testEmptyTokenCache(t *testing.T) {
 	// arrange
 	httpClientMock := &mocks.HTTPClientProvider{}
 	esClientMock := &mocks.ESClientProvider{}
+	slackClientMock := &mocks.SlackProvider{}
 
 	esClientMock.On("Search", "auth0-token-cache-test",
 		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return(nil, errors.New("not found"))
@@ -181,6 +189,8 @@ func testEmptyTokenCache(t *testing.T) {
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
 	genResJSON, _ := json.Marshal(genRes)
 	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
+	slackClientMock.On("SendText", "created token is not valid").Return(nil)
+	slackClientMock.On("SendText", "not found").Return(nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -194,7 +204,8 @@ func testEmptyTokenCache(t *testing.T) {
 		"localhost",
 		"xh02agyyaqaj07et5g0uatt15em23j7v",
 		httpClientMock,
-		esClientMock)
+		esClientMock,
+		slackClientMock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -202,13 +213,14 @@ func testEmptyTokenCache(t *testing.T) {
 	_, err = srv.GetToken()
 
 	//assert
-	assert.NoError(t, err)
+	assert.Equal(t, errors.New("created token is not valid"), err)
 }
 
 func testTokenWithGetLastRequestDateError(t *testing.T) {
 	// arrange
 	httpClientMock := &mocks.HTTPClientProvider{}
 	esClientMock := &mocks.ESClientProvider{}
+	slackClientMock := &mocks.SlackProvider{}
 
 	esClientMock.On("Search", "auth0-token-cache-test",
 		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return(nil, errors.New("not found"))
@@ -221,6 +233,7 @@ func testTokenWithGetLastRequestDateError(t *testing.T) {
 	genRes := &Resp{AccessToken: "newToken", Scope: "", ExpiresIn: 100, TokenType: "jwt"}
 	genResJSON, _ := json.Marshal(genRes)
 	httpClientMock.On("Request", "localhost", "POST", mock.Anything, []byte(genPayload), mock.Anything).Return(200, genResJSON, nil)
+	slackClientMock.On("SendText", "not found").Return(nil)
 
 	// act
 	srv, err := NewAuth0Client("",
@@ -234,7 +247,8 @@ func testTokenWithGetLastRequestDateError(t *testing.T) {
 		"localhost",
 		"xh02agyyaqaj07et5g0uatt15em23j7v",
 		httpClientMock,
-		esClientMock)
+		esClientMock,
+		slackClientMock)
 	if err != nil {
 		t.Error(err)
 	}

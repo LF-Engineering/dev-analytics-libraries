@@ -23,6 +23,11 @@ type ESClientProvider interface {
 	Get(index string, query map[string]interface{}, result interface{}) error
 }
 
+// SlackProvider ...
+type SlackProvider interface {
+	SendText(text string) error
+}
+
 // ClientProvider ...
 type ClientProvider struct {
 	ESCacheURL       string
@@ -37,6 +42,7 @@ type ClientProvider struct {
 	Environment      string
 	httpClient       HTTPClientProvider
 	esClient         ESClientProvider
+	slackClient      SlackProvider
 }
 
 // NewAuth0Client ...
@@ -51,7 +57,8 @@ func NewAuth0Client(esCacheURL,
 	authURL string,
 	authSecret string,
 	httpClient HTTPClientProvider,
-	esClient ESClientProvider) (*ClientProvider, error) {
+	esClient ESClientProvider,
+	slackClient SlackProvider) (*ClientProvider, error) {
 	auth0 := &ClientProvider{
 		ESCacheURL:       esCacheURL,
 		ESCacheUsername:  esCacheUsername,
@@ -65,6 +72,7 @@ func NewAuth0Client(esCacheURL,
 		Environment:      env,
 		httpClient:       httpClient,
 		esClient:         esClient,
+		slackClient:      slackClient,
 	}
 
 	return auth0, nil
@@ -134,9 +142,15 @@ func (a *ClientProvider) generateToken() (string, error) {
 	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
 	_, response, err := a.httpClient.Request(a.AuthURL, "POST", nil, body, nil)
 	if err != nil {
-		// todo : notify to slack
+		go func() {
+			_ = a.slackClient.SendText(err.Error())
+		}()
 		log.Println("GenerateToken", err)
 	}
+	go func() {
+		err = a.createLastActionDate()
+		log.Println(err)
+	}()
 
 	log.Println(a.AuthURL, " ", string(body))
 	err = json.Unmarshal(response, &result)
@@ -146,11 +160,12 @@ func (a *ClientProvider) generateToken() (string, error) {
 	if result.AccessToken != "" {
 		log.Println("GenerateToken: Token generated successfully.")
 	}
-
-	go func() {
-		err = a.createLastActionDate()
-		log.Println(err)
-	}()
+	if !a.isValid(result.AccessToken) {
+		go func() {
+			_ = a.slackClient.SendText("created token is not valid")
+		}()
+		return "", errors.New("created token is not valid")
+	}
 
 	return result.AccessToken, nil
 }
@@ -159,6 +174,9 @@ func (a *ClientProvider) generateToken() (string, error) {
 func (a *ClientProvider) getCachedToken() (string, error) {
 	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
+		go func() {
+			_ = a.slackClient.SendText(err.Error())
+		}()
 		return "", err
 	}
 
