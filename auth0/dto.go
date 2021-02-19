@@ -78,4 +78,5 @@ const (
 	lastTokenDate         = "last-token-date"
 	lastAuth0TokenRequest = "last-auth0-token-request-"
 	auth0TokenCache       = "auth0-token-cache-"
+	tokenDoc              = "token"
 )

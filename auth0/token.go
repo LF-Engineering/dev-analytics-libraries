@@ -170,7 +170,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 	return result.AccessToken, nil
 }
 
-// GetToken ...
 func (a *ClientProvider) getCachedToken() (string, error) {
 	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
@@ -195,8 +194,6 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 	return "", errors.New("GetToken: could not find the associated token")
 }
 
-// CreateAuthToken accepts
-//  esCacheURL, esCacheUsername, esCachePassword, Token
 func (a *ClientProvider) createAuthToken(token string) error {
 	log.Println("creating new auth token")
 	at := AuthToken{
@@ -205,7 +202,7 @@ func (a *ClientProvider) createAuthToken(token string) error {
 		CreatedAt: time.Now().UTC(),
 	}
 	doc, _ := json.Marshal(at)
-	res, err := a.esClient.CreateDocument(strings.TrimSpace(auth0TokenCache+a.Environment), "token", doc)
+	res, err := a.esClient.CreateDocument(strings.TrimSpace(auth0TokenCache+a.Environment), tokenDoc, doc)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
@@ -218,7 +215,9 @@ func (a *ClientProvider) createAuthToken(token string) error {
 var searchTokenQuery = map[string]interface{}{
 	"size": 1,
 	"query": map[string]interface{}{
-		"match_all": map[string]interface{}{},
+		"term": map[string]interface{}{
+			"_id": tokenDoc,
+		},
 	},
 }
 

@@ -35,7 +35,7 @@ func testNormalScenario(t *testing.T) {
 }}`
 
 	esClientMock.On("Search", "auth0-token-cache-test",
-		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return([]byte(tokenRes), nil)
+		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "token"}}, "size": 1}).Return([]byte(tokenRes), nil)
 	esClientMock.On("Search", "last-auth0-token-request-test",
 		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "last-token-date"}}, "size": 1}).Return([]byte(lastTokenRes), nil)
 	esClientMock.On("CreateDocument", "last-auth0-token-request-test", "last-token-date", mock.Anything).Return(nil, nil)
@@ -85,7 +85,7 @@ func testExpiredToken(t *testing.T) {
 }}`
 
 	esClientMock.On("Search", "auth0-token-cache-test",
-		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return([]byte(tokenRes), nil)
+		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "token"}}, "size": 1}).Return([]byte(tokenRes), nil)
 	esClientMock.On("Search", "last-auth0-token-request-test",
 		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "last-token-date"}}, "size": 1}).Return([]byte(lastTokenRes), nil)
 	esClientMock.On("CreateDocument", "last-auth0-token-request-test", "last-token-date", mock.Anything).Return(nil, nil)
@@ -137,7 +137,7 @@ func testGeneratingTwoTokensWithinHour(t *testing.T) {
 }}`, lastDate)
 
 	esClientMock.On("Search", "auth0-token-cache-test",
-		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return([]byte(tokenRes), nil)
+		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "token"}}, "size": 1}).Return([]byte(tokenRes), nil)
 	esClientMock.On("Search", "last-auth0-token-request-test",
 		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "last-token-date"}}, "size": 1}).Return([]byte(lastTokenRes), nil)
 	esClientMock.On("CreateDocument", "last-auth0-token-request-test", "last-token-date", mock.Anything).Return(nil, nil)
@@ -179,7 +179,7 @@ func testEmptyTokenCache(t *testing.T) {
 	slackClientMock := &mocks.SlackProvider{}
 
 	esClientMock.On("Search", "auth0-token-cache-test",
-		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return(nil, errors.New("not found"))
+		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "token"}}, "size": 1}).Return(nil, errors.New("not found"))
 	esClientMock.On("Search", "last-auth0-token-request-test",
 		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "last-token-date"}}, "size": 1}).Return(nil, errors.New("index doesn't exist"))
 	esClientMock.On("CreateDocument", "last-auth0-token-request-test", "last-token-date", mock.Anything).Return(nil, nil)
@@ -223,7 +223,7 @@ func testTokenWithGetLastRequestDateError(t *testing.T) {
 	slackClientMock := &mocks.SlackProvider{}
 
 	esClientMock.On("Search", "auth0-token-cache-test",
-		map[string]interface{}{"query": map[string]interface{}{"match_all": map[string]interface{}{}}, "size": 1}).Return(nil, errors.New("not found"))
+		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "token"}}, "size": 1}).Return(nil, errors.New("not found"))
 	esClientMock.On("Search", "last-auth0-token-request-test",
 		map[string]interface{}{"query": map[string]interface{}{"term": map[string]interface{}{"_id": "last-token-date"}}, "size": 1}).Return(nil, errors.New("es is down"))
 	esClientMock.On("CreateDocument", "last-auth0-token-request-test", "last-token-date", mock.Anything).Return(nil, nil)
