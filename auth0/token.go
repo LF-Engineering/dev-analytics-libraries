@@ -3,6 +3,7 @@ package auth0
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -143,9 +144,10 @@ func (a *ClientProvider) generateToken() (string, error) {
 	_, response, err := a.httpClient.Request(a.AuthURL, "POST", nil, body, nil)
 	if err != nil {
 		go func() {
-			_ = a.slackClient.SendText(err.Error())
+			err := a.slackClient.SendText(err.Error())
+			fmt.Println("Err: send to slack: ", err)
 		}()
-		log.Println("GenerateToken", err)
+		log.Println("Err: GenerateToken ", err)
 	}
 	go func() {
 		err = a.createLastActionDate()
@@ -162,7 +164,8 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}
 	if !a.isValid(result.AccessToken) {
 		go func() {
-			_ = a.slackClient.SendText("created token is not valid")
+			err := a.slackClient.SendText("created token is not valid")
+			fmt.Println("Err: send to slack: ", err)
 		}()
 		return "", errors.New("created token is not valid")
 	}
@@ -174,7 +177,8 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
 		go func() {
-			_ = a.slackClient.SendText(err.Error())
+			err := a.slackClient.SendText(err.Error())
+			fmt.Println("Err: send to slack: ", err)
 		}()
 		return "", err
 	}
