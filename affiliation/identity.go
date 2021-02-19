@@ -48,7 +48,6 @@ type Affiliation struct {
 	httpClientProvider  HTTPClientProvider
 	esClientProvider    ESClientProvider
 	auth0ClientProvider Auth0ClientProvider
-	AuthSecret          string
 	slackProvider       SlackProvider
 }
 
