@@ -9,18 +9,33 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
+
 	"github.com/LF-Engineering/dev-analytics-libraries/auth0"
 	"github.com/LF-Engineering/dev-analytics-libraries/http"
 )
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	ValidateToken(string) (string, error)
+	GetToken() (string, error)
 }
 
 // HTTPClientProvider ...
 type HTTPClientProvider interface {
 	Request(string, string, map[string]string, []byte, map[string]string) (int, []byte, error)
+}
+
+// ESClientProvider ...
+type ESClientProvider interface {
+	CreateDocument(index, documentID string, body []byte) ([]byte, error)
+	Search(index string, query map[string]interface{}) ([]byte, error)
+	CreateIndex(index string, body []byte) ([]byte, error)
+	Get(index string, query map[string]interface{}, result interface{}) error
+}
+
+// SlackProvider ...
+type SlackProvider interface {
+	SendText(text string) error
 }
 
 // Org struct
@@ -37,6 +52,9 @@ type Org struct {
 	Environment      string
 	httpClient       HTTPClientProvider
 	auth0Client      Auth0ClientProvider
+	esClient         ESClientProvider
+	AuthSecret       string
+	slackProvider    SlackProvider
 }
 
 // SearchOrganization ...
@@ -45,7 +63,7 @@ func (o *Org) SearchOrganization(name string, pageSize string, offset string) (*
 		log.Println("SearchOrganization: name param is empty")
 		return nil, errors.New("SearchOrganization: name param is empty")
 	}
-	token, err := o.auth0Client.ValidateToken(o.Environment)
+	token, err := o.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -81,7 +99,7 @@ func (o *Org) LookupOrganization(name string) (*Organization, error) {
 		log.Println("LookupOrganization: name param is empty")
 		return nil, errors.New("LookupOrganization: name param is empty")
 	}
-	token, err := o.auth0Client.ValidateToken(o.Environment)
+	token, err := o.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -109,7 +127,7 @@ func (o *Org) LookupOrganization(name string) (*Organization, error) {
 // orgBaseURL, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
 func NewClient(orgBaseURL, esCacheURL, esCacheUsername,
 	esCachePassword, env, authGrantType, authClientID, authClientSecret,
-	authAudience, authURL string) (*Org, error) {
+	authAudience, authURL, authSecret string, slackProvider SlackProvider) (*Org, error) {
 	org := &Org{
 		OrgBaseURL:       orgBaseURL,
 		ESCacheURL:       esCacheURL,
@@ -121,26 +139,37 @@ func NewClient(orgBaseURL, esCacheURL, esCacheUsername,
 		AuthAudience:     authAudience,
 		AuthURL:          authURL,
 		Environment:      env,
+		AuthSecret:       authSecret,
+		slackProvider:    slackProvider,
 	}
 
-	httpClientProvider, auth0ClientProvider, err := buildServices(org)
+	httpClientProvider, auth0ClientProvider, esClientProvider, err := buildServices(org)
 	if err != nil {
 		return nil, err
 	}
 
 	org.httpClient = httpClientProvider
 	org.auth0Client = auth0ClientProvider
+	org.esClient = esClientProvider
 
 	return org, nil
 }
 
-func buildServices(o *Org) (*http.ClientProvider, *auth0.ClientProvider, error) {
-	httpClientProvider := http.NewClientProvider(time.Minute)
-
-	auth0ClientProvider, err := auth0.NewAuth0Client(o.ESCacheURL, o.ESCacheUsername, o.ESCachePassword, o.Environment, o.AuthGrantType, o.AuthClientID, o.AuthClientSecret, o.AuthAudience, o.AuthURL)
+func buildServices(o *Org) (*http.ClientProvider, *auth0.ClientProvider, *elastic.ClientProvider, error) {
+	esClientProvider, err := elastic.NewClientProvider(&elastic.Params{
+		URL:      o.ESCacheURL,
+		Username: o.ESCacheUsername,
+		Password: o.ESCachePassword,
+	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return httpClientProvider, auth0ClientProvider, nil
+	httpClientProvider := http.NewClientProvider(time.Minute)
+	auth0ClientProvider, err := auth0.NewAuth0Client(o.ESCacheURL, o.ESCacheUsername, o.ESCachePassword, o.Environment, o.AuthGrantType, o.AuthClientID, o.AuthClientSecret, o.AuthAudience, o.AuthURL, o.AuthSecret, o.httpClient, o.esClient, o.slackProvider)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return httpClientProvider, auth0ClientProvider, esClientProvider, nil
 }

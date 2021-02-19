@@ -1,9 +1,12 @@
 package auth0
 
+import "time"
+
 // AuthToken Struct
 type AuthToken struct {
-	Name  string `json:"name"`
-	Token string `json:"token"`
+	Name      string    `json:"name"`
+	Token     string    `json:"token"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Resp struct
@@ -42,3 +45,38 @@ type ESTokenSchema struct {
 		} `json:"hits"`
 	} `json:"hits"`
 }
+
+// LastActionSchema ...
+type LastActionSchema struct {
+	Took     int  `json:"took"`
+	TimedOut bool `json:"timed_out"`
+	Shards   struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	} `json:"_shards"`
+	Hits struct {
+		Total struct {
+			Value    int    `json:"value"`
+			Relation string `json:"relation"`
+		} `json:"total"`
+		MaxScore float64 `json:"max_score"`
+		Hits     []struct {
+			Index  string  `json:"_index"`
+			Type   string  `json:"_type"`
+			ID     string  `json:"_id"`
+			Score  float64 `json:"_score"`
+			Source struct {
+				Date time.Time `json:"date"`
+			} `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
+const (
+	lastTokenDate         = "last-token-date"
+	lastAuth0TokenRequest = "last-auth0-token-request-"
+	auth0TokenCache       = "auth0-token-cache-"
+	tokenDoc              = "token"
+)
