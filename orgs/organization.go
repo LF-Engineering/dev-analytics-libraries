@@ -78,7 +78,7 @@ func (o *Org) SearchOrganization(name string, pageSize string, offset string) (*
 	if pageSize == "" {
 		pageSize = "100"
 	}
-	endpoint := o.OrgBaseURL + "/orgs/search?name=" + url.PathEscape(name) + "&pageSize=" + url.PathEscape(pageSize) + "&offset=" + url.PathEscape(offset)
+	endpoint := o.OrgBaseURL + "/orgs/search?name=" + url.QueryEscape(name) + "&pageSize=" + url.PathEscape(pageSize) + "&offset=" + url.PathEscape(offset)
 	_, res, err := o.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("SearchOrganization: Could not get the organization list: ", err)
@@ -107,7 +107,7 @@ func (o *Org) LookupOrganization(name string) (*Organization, error) {
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 
-	endpoint := o.OrgBaseURL + "/lookup?name=" + url.PathEscape(name)
+	endpoint := o.OrgBaseURL + "/lookup?name=" + url.QueryEscape(name)
 	_, res, err := o.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("LookupOrganization: Could not get the organization: ", err)

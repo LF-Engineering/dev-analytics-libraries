@@ -48,7 +48,7 @@ func TestLookupOrganization(t *testing.T) {
 	buf := &bytes.Buffer{}
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
-	lookupEndpoint := orgStruct.OrgBaseURL + "/lookup?name=" + url.PathEscape(orgName)
+	lookupEndpoint := orgStruct.OrgBaseURL + "/lookup?name=" + url.QueryEscape(orgName)
 
 	data := (map[string]string{
 		"ID":      "v03fs-3",
@@ -75,7 +75,7 @@ func TestSearchOrganization(t *testing.T) {
 	buf := &bytes.Buffer{}
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
-	searchEndpoint := orgStruct.OrgBaseURL + "/orgs/search?name=" + url.PathEscape(orgName) + "&pageSize=" + pageSize + "&offset=" + offset
+	searchEndpoint := orgStruct.OrgBaseURL + "/orgs/search?name=" + url.QueryEscape(orgName) + "&pageSize=" + pageSize + "&offset=" + offset
 
 	data := map[string]interface{}{
 		"Data": []map[string]string{
@@ -114,7 +114,7 @@ func TestSearchOrganizationSpecialChars(t *testing.T) {
 	buf := &bytes.Buffer{}
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
-	searchEndpoint := orgStruct.OrgBaseURL + "/orgs/search?name=" + url.PathEscape(orgName) + "&pageSize=" + pageSize + "&offset=" + offset
+	searchEndpoint := orgStruct.OrgBaseURL + "/orgs/search?name=" + url.QueryEscape(orgName) + "&pageSize=" + pageSize + "&offset=" + offset
 
 	data := map[string]interface{}{
 		"Data": []map[string]string{
