@@ -36,7 +36,6 @@ var (
 		httpClientProvider,
 		auth0ClientProvider,
 		elasticClientProvider,
-		"secret",
 		slackClientProvider,
 	}
 
