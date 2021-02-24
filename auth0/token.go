@@ -257,10 +257,12 @@ func (a *ClientProvider) isValid(token string) bool {
 	return p.Valid
 }
 
+// Jwks result from auth0 well know keys
 type Jwks struct {
 	Keys []JSONWebKeys `json:"keys"`
 }
 
+// JSONWebKeys auth0 token key
 type JSONWebKeys struct {
 	Kty string   `json:"kty"`
 	Kid string   `json:"kid"`
@@ -278,16 +280,9 @@ func (a *ClientProvider) getPemCert(token *jwt.Token) (string, error) {
 	if err != nil {
 		return cert, err
 	}
-	//defer resp.Body.Close()
-fmt.Println("xxxxx")
-	fmt.Println(string(resp))
+
 	var jwks = Jwks{}
 	if err := json.Unmarshal(resp, &jwks); err != nil {
-		return cert, err
-	}
-	//err = json.NewDecoder(resp.Body).Decode(&jwks)
-
-	if err != nil {
 		return cert, err
 	}
 
