@@ -53,7 +53,6 @@ type Org struct {
 	httpClient       HTTPClientProvider
 	auth0Client      Auth0ClientProvider
 	esClient         ESClientProvider
-	AuthSecret       string
 	slackProvider    SlackProvider
 }
 
@@ -127,7 +126,7 @@ func (o *Org) LookupOrganization(name string) (*Organization, error) {
 // orgBaseURL, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
 func NewClient(orgBaseURL, esCacheURL, esCacheUsername,
 	esCachePassword, env, authGrantType, authClientID, authClientSecret,
-	authAudience, authURL, authSecret string, slackProvider SlackProvider) (*Org, error) {
+	authAudience, authURL string, slackProvider SlackProvider) (*Org, error) {
 	org := &Org{
 		OrgBaseURL:       orgBaseURL,
 		ESCacheURL:       esCacheURL,
@@ -139,7 +138,6 @@ func NewClient(orgBaseURL, esCacheURL, esCacheUsername,
 		AuthAudience:     authAudience,
 		AuthURL:          authURL,
 		Environment:      env,
-		AuthSecret:       authSecret,
 		slackProvider:    slackProvider,
 	}
 
