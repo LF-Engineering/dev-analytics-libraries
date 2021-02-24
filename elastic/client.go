@@ -266,6 +266,40 @@ func (p *ClientProvider) BulkInsert(data []BulkData) ([]byte, error) {
 	return resData, nil
 }
 
+// BulkUpdate inserts more than one item using one request
+func (p *ClientProvider) BulkUpdate(data []BulkData) ([]byte, error) {
+	lines := make([]interface{}, 0)
+
+	for _, item := range data {
+		indexName := item.IndexName
+		index := map[string]interface{}{
+			"update": map[string]string{
+				"_index": indexName,
+				"_id":    item.ID,
+			},
+		}
+		lines = append(lines, index)
+		lines = append(lines, "\n")
+		lines = append(lines, item.Data)
+		lines = append(lines, "\n")
+	}
+
+	body, err := json.Marshal(lines)
+	if err != nil {
+		return nil, errors.New("unable to convert body to json")
+	}
+
+	var re = regexp.MustCompile(`(}),"\\n",?`)
+	body = []byte(re.ReplaceAllString(strings.TrimSuffix(strings.TrimPrefix(string(body), "["), "]"), "$1\n"))
+
+	resData, err := p.Bulk(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resData, nil
+}
+
 // BulkDelete deletes more than one item using one request
 func (p *ClientProvider) BulkDelete(data []BulkData) ([]byte, error) {
 	lines := make([]interface{}, 0)
