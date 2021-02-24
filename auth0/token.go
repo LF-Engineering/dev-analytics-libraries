@@ -236,14 +236,16 @@ var searchCacheQuery = map[string]interface{}{
 }
 
 func (a *ClientProvider) isValid(token string) bool {
-	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+	p, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
+
 		cert, err := a.getPemCert(t)
 		if err != nil {
 			return nil, err
 		}
+
 		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
 		if err != nil {
 			return nil, err
@@ -251,12 +253,12 @@ func (a *ClientProvider) isValid(token string) bool {
 
 		return key, nil
 	})
-	if err != nil || !t.Valid {
+	if err != nil || !p.Valid {
 		log.Println(err)
 		return false
 	}
 
-	return t.Valid
+	return p.Valid
 }
 
 type Jwks struct {
