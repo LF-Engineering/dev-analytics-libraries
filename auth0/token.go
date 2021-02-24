@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 	"time"
 
@@ -40,7 +39,6 @@ type ClientProvider struct {
 	AuthClientSecret string
 	AuthAudience     string
 	AuthURL          string
-	AuthSecret       string
 	Environment      string
 	httpClient       HTTPClientProvider
 	esClient         ESClientProvider
@@ -57,7 +55,6 @@ func NewAuth0Client(esCacheURL,
 	authClientSecret,
 	authAudience,
 	authURL string,
-	authSecret string,
 	httpClient HTTPClientProvider,
 	esClient ESClientProvider,
 	slackClient SlackProvider) (*ClientProvider, error) {
@@ -70,7 +67,6 @@ func NewAuth0Client(esCacheURL,
 		AuthClientSecret: authClientSecret,
 		AuthAudience:     authAudience,
 		AuthURL:          authURL,
-		AuthSecret:       authSecret,
 		Environment:      env,
 		httpClient:       httpClient,
 		esClient:         esClient,
@@ -276,15 +272,20 @@ type JSONWebKeys struct {
 
 func (a *ClientProvider) getPemCert(token *jwt.Token) (string, error) {
 	cert := ""
-	resp, err := http.Get(a.AuthURL + "/.well-known/jwks.json")
-
+	//resp, err := http.Get(a.AuthURL + "/.well-known/jwks.json")
+	fmt.Println(fmt.Sprintf("%s/.well-known/jwks.json", a.AuthURL))
+	_, resp, err := a.httpClient.Request(fmt.Sprintf("%s/.well-known/jwks.json", a.AuthURL), "GET", nil, nil, nil)
 	if err != nil {
 		return cert, err
 	}
-	defer resp.Body.Close()
-
+	//defer resp.Body.Close()
+fmt.Println("xxxxx")
+	fmt.Println(string(resp))
 	var jwks = Jwks{}
-	err = json.NewDecoder(resp.Body).Decode(&jwks)
+	if err := json.Unmarshal(resp, &jwks); err != nil {
+		return cert, err
+	}
+	//err = json.NewDecoder(resp.Body).Decode(&jwks)
 
 	if err != nil {
 		return cert, err
