@@ -266,7 +266,7 @@ func (p *ClientProvider) BulkInsert(data []BulkData) ([]byte, error) {
 	return resData, nil
 }
 
-// BulkUpdate inserts more than one item using one request
+// BulkUpdate update more than one item using one request
 func (p *ClientProvider) BulkUpdate(data []BulkData) ([]byte, error) {
 	lines := make([]interface{}, 0)
 
