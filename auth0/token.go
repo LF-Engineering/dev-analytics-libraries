@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -235,13 +236,70 @@ var searchCacheQuery = map[string]interface{}{
 }
 
 func (a *ClientProvider) isValid(token string) bool {
-	t, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) { return []byte(a.AuthSecret), nil })
+	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		cert, err := a.getPemCert(t)
+		if err != nil {
+			return nil, err
+		}
+		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+		if err != nil {
+			return nil, err
+		}
+
+		return key, nil
+	})
 	if err != nil || !t.Valid {
 		log.Println(err)
 		return false
 	}
 
 	return t.Valid
+}
+
+type Jwks struct {
+	Keys []JSONWebKeys `json:"keys"`
+}
+
+type JSONWebKeys struct {
+	Kty string   `json:"kty"`
+	Kid string   `json:"kid"`
+	Use string   `json:"use"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	X5c []string `json:"x5c"`
+}
+
+func (a *ClientProvider) getPemCert(token *jwt.Token) (string, error) {
+	cert := ""
+	resp, err := http.Get(a.AuthURL + "/.well-known/jwks.json")
+
+	if err != nil {
+		return cert, err
+	}
+	defer resp.Body.Close()
+
+	var jwks = Jwks{}
+	err = json.NewDecoder(resp.Body).Decode(&jwks)
+
+	if err != nil {
+		return cert, err
+	}
+
+	for k, _ := range jwks.Keys {
+		if token.Header["kid"] == jwks.Keys[k].Kid {
+			cert = "-----BEGIN CERTIFICATE-----\n" + jwks.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
+		}
+	}
+
+	if cert == "" {
+		err := errors.New("Unable to find appropriate key.")
+		return cert, err
+	}
+
+	return cert, nil
 }
 
 func (a *ClientProvider) createLastActionDate() error {

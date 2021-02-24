@@ -27,7 +27,7 @@ func testNormalScenario(t *testing.T) {
 	slackClientMock := &mocks.SlackProvider{}
 	tokenRes := `{
 "hits": {
-"hits": [{"_index":"","_type":"","_id": "","_score":0,"_source":{"name": "", "token":"eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjc5MjUwMTYyOTV9.gPG_YA_q7An0tNtFYMEQvXJ--B-nP07UbYshQljrdMc"}}]
+"hits": [{"_index":"","_type":"","_id": "","_score":0,"_source":{"name": "", "token":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJFWTNSVGcyTTBVMk5URTRSamcwTUVRNU9VSkZRMFpGTVVGRVJUaEVRVVF5TTBZeVF6QXhOQSJ9.eyJpc3MiOiJodHRwczovL2xpbnV4Zm91bmRhdGlvbi1kZXYuYXV0aDAuY29tLyIsInN1YiI6IlhpRFNFeUxRZ0dNM0RZWEJ1SVJYVGNCVDVMaHpxMzBRQGNsaWVudHMiLCJhdWQiOiJodHRwczovL2FwaS1ndy5kZXYucGxhdGZvcm0ubGludXhmb3VuZGF0aW9uLm9yZy8iLCJpYXQiOjE2MTQxMzE5MDcsImV4cCI6MTYxNDE1MzUwNywiYXpwIjoiWGlEU0V5TFFnR00zRFlYQnVJUlhUY0JUNUxoenEzMFEiLCJzY29wZSI6ImFjY2VzczphcGkiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMifQ.hXv-K9wtLN59GjIsJ4cwb3Tu7hk0jbRdvuETw-1r5N3WPOzDsbNbJNb8TXnRQgsO4u0jMyTjeXyzrJ0EQuOEL1M8yMsgZdIm5CWNnwW6Gqfie_mNevSyh2bIzwFi1CDW_9D9VIypiAUWBuOtBUqZvBIkbiDKG4nAnnRANtDgPBLTxrPfZyc7T9-HvOY5JERMt6YFH-4rx1PUMpBQvknMV08eJsgCcwU0BE7u4rc-vyFjJZJkFe7XQTOOGQnDZLpsHzQYiyRbZXpDsPrFFYzl0K0ZI7NlMF3ilKVSdinZ7ufBAFEjVrpESfqBL8yHkGxCKdkl7CqzNKvqOE2kodMGjw"}}]
 }}`
 	lastTokenRes := `{
 "hits": {
@@ -53,10 +53,10 @@ func testNormalScenario(t *testing.T) {
 		"test",
 		"",
 		"",
-		"",
-		"",
-		"localhost",
 		"xh02agyyaqaj07et5g0uatt15em23j7v",
+		"",
+		"https://linuxfoundation-dev.auth0.com",
+		"",
 		httpClientMock,
 		esClientMock,
 		slackClientMock)
