@@ -79,13 +79,12 @@ func NewAuth0Client(esCacheURL,
 // GetToken ...
 func (a *ClientProvider) GetToken() (string, error) {
 	// get cached token
-	var authToken string
-	cachedToken, err := a.getCachedToken()
+	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
 	}
 
-	if cachedToken == "" || err != nil {
+	if authToken == "" || err != nil {
 		authToken, err = a.generateToken()
 		if err != nil {
 			return "", err
@@ -95,8 +94,8 @@ func (a *ClientProvider) GetToken() (string, error) {
 		return authToken, err
 	}
 	// check token validity
-	if a.isValid(cachedToken) {
-		return cachedToken, nil
+	if a.isValid(authToken) {
+		return authToken, nil
 	}
 
 	// generate a new token if not valid
