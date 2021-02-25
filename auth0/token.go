@@ -94,7 +94,8 @@ func (a *ClientProvider) GetToken() (string, error) {
 		return authToken, err
 	}
 	// check token validity
-	if a.isValid(authToken) {
+	ok, err := a.isValid(authToken)
+	if ok {
 		return authToken, nil
 	}
 
@@ -140,8 +141,11 @@ func (a *ClientProvider) generateToken() (string, error) {
 	_, response, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/token", a.AuthURL), "POST", nil, body, nil)
 	if err != nil {
 		go func() {
-			err := a.slackClient.SendText(err.Error())
-			fmt.Println("Err: send to slack: ", err)
+			errMsg := fmt.Sprintf("%s: error generating a new token\n %s", a.Environment, err)
+			if err := a.slackClient.SendText(errMsg) ; err != nil {
+				log.Println(" Err: GenerateToken ", a.Environment, err)
+			}
+
 		}()
 		log.Println("Err: GenerateToken ", err)
 	}
@@ -158,9 +162,11 @@ func (a *ClientProvider) generateToken() (string, error) {
 	if result.AccessToken != "" {
 		log.Println("GenerateToken: Token generated successfully.")
 	}
-	if !a.isValid(result.AccessToken) {
+	ok, err := a.isValid(result.AccessToken)
+	if !ok || err != nil {
 		go func() {
-			err := a.slackClient.SendText("created token is not valid")
+			errMsg := fmt.Sprintf("%s: error validating the newly created token\n %s", a.Environment, err)
+			err := a.slackClient.SendText(errMsg)
 			fmt.Println("Err: send to slack: ", err)
 		}()
 		return "", errors.New("created token is not valid")
@@ -173,7 +179,8 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
 		go func() {
-			err := a.slackClient.SendText(err.Error())
+			errMsg := fmt.Sprintf("%s: error cached token not found\n %s", a.Environment, err)
+			err := a.slackClient.SendText(errMsg)
 			fmt.Println("Err: send to slack: ", err)
 		}()
 		return "", err
@@ -230,7 +237,7 @@ var searchCacheQuery = map[string]interface{}{
 	},
 }
 
-func (a *ClientProvider) isValid(token string) bool {
+func (a *ClientProvider) isValid(token string) (bool, error) {
 	p, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -248,12 +255,8 @@ func (a *ClientProvider) isValid(token string) bool {
 
 		return key, nil
 	})
-	if err != nil || !p.Valid {
-		log.Println(err)
-		return false
-	}
 
-	return p.Valid
+	return p.Valid, err
 }
 
 // Jwks result from auth0 well know keys
