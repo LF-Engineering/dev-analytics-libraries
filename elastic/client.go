@@ -539,7 +539,7 @@ func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]b
 
 // ReadWithScroll scrolls through the pages of size given in the query and adds up the scrollID in the result
 // Which is expected in the subsequent function call to get the next page, empty result indicates the end of the page
-func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error) {
+func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error)  {
 	var res *esapi.Response
 	defer func() {
 		if err := res.Body.Close(); err != nil {
