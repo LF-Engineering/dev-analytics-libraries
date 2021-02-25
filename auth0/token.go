@@ -39,7 +39,6 @@ type ClientProvider struct {
 	AuthClientSecret string
 	AuthAudience     string
 	AuthURL          string
-	AuthSecret       string
 	Environment      string
 	httpClient       HTTPClientProvider
 	esClient         ESClientProvider
@@ -56,7 +55,6 @@ func NewAuth0Client(esCacheURL,
 	authClientSecret,
 	authAudience,
 	authURL string,
-	authSecret string,
 	httpClient HTTPClientProvider,
 	esClient ESClientProvider,
 	slackClient SlackProvider) (*ClientProvider, error) {
@@ -69,7 +67,6 @@ func NewAuth0Client(esCacheURL,
 		AuthClientSecret: authClientSecret,
 		AuthAudience:     authAudience,
 		AuthURL:          authURL,
-		AuthSecret:       authSecret,
 		Environment:      env,
 		httpClient:       httpClient,
 		esClient:         esClient,
@@ -82,13 +79,12 @@ func NewAuth0Client(esCacheURL,
 // GetToken ...
 func (a *ClientProvider) GetToken() (string, error) {
 	// get cached token
-	var authToken string
-	cachedToken, err := a.getCachedToken()
+	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
 	}
 
-	if cachedToken == "" || err != nil {
+	if authToken == "" || err != nil {
 		authToken, err = a.generateToken()
 		if err != nil {
 			return "", err
@@ -98,7 +94,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 		return authToken, err
 	}
 	// check token validity
-	if a.isValid(cachedToken) {
+	if a.isValid(authToken) {
 		return authToken, nil
 	}
 
@@ -141,7 +137,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}
 
 	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
-	_, response, err := a.httpClient.Request(a.AuthURL, "POST", nil, body, nil)
+	_, response, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/token", a.AuthURL), "POST", nil, body, nil)
 	if err != nil {
 		go func() {
 			err := a.slackClient.SendText(err.Error())
@@ -235,13 +231,70 @@ var searchCacheQuery = map[string]interface{}{
 }
 
 func (a *ClientProvider) isValid(token string) bool {
-	t, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) { return []byte(a.AuthSecret), nil })
-	if err != nil || !t.Valid {
+	p, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+
+		cert, err := a.getPemCert(t)
+		if err != nil {
+			return nil, err
+		}
+
+		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+		if err != nil {
+			return nil, err
+		}
+
+		return key, nil
+	})
+	if err != nil || !p.Valid {
 		log.Println(err)
 		return false
 	}
 
-	return t.Valid
+	return p.Valid
+}
+
+// Jwks result from auth0 well know keys
+type Jwks struct {
+	Keys []JSONWebKeys `json:"keys"`
+}
+
+// JSONWebKeys auth0 token key
+type JSONWebKeys struct {
+	Kty string   `json:"kty"`
+	Kid string   `json:"kid"`
+	Use string   `json:"use"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	X5c []string `json:"x5c"`
+}
+
+func (a *ClientProvider) getPemCert(token *jwt.Token) (string, error) {
+	cert := ""
+	_, resp, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/.well-known/jwks.json", a.AuthURL), "GET", nil, nil, nil)
+	if err != nil {
+		return cert, err
+	}
+
+	var jwks = Jwks{}
+	if err := json.Unmarshal(resp, &jwks); err != nil {
+		return cert, err
+	}
+
+	for _, k := range jwks.Keys {
+		if token.Header["kid"] == k.Kid {
+			cert = "-----BEGIN CERTIFICATE-----\n" + k.X5c[0] + "\n-----END CERTIFICATE-----"
+		}
+	}
+
+	if cert == "" {
+		err := errors.New("unable to find appropriate key")
+		return cert, err
+	}
+
+	return cert, nil
 }
 
 func (a *ClientProvider) createLastActionDate() error {
