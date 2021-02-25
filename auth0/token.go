@@ -79,13 +79,12 @@ func NewAuth0Client(esCacheURL,
 // GetToken ...
 func (a *ClientProvider) GetToken() (string, error) {
 	// get cached token
-	var authToken string
-	cachedToken, err := a.getCachedToken()
+	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
 	}
 
-	if cachedToken == "" || err != nil {
+	if authToken == "" || err != nil {
 		authToken, err = a.generateToken()
 		if err != nil {
 			return "", err
@@ -95,7 +94,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 		return authToken, err
 	}
 	// check token validity
-	if a.isValid(cachedToken) {
+	if a.isValid(authToken) {
 		return authToken, nil
 	}
 
@@ -138,7 +137,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}
 
 	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
-	_, response, err := a.httpClient.Request(a.AuthURL, "POST", nil, body, nil)
+	_, response, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/token", a.AuthURL), "POST", nil, body, nil)
 	if err != nil {
 		go func() {
 			err := a.slackClient.SendText(err.Error())
@@ -274,9 +273,7 @@ type JSONWebKeys struct {
 
 func (a *ClientProvider) getPemCert(token *jwt.Token) (string, error) {
 	cert := ""
-	//resp, err := http.Get(a.AuthURL + "/.well-known/jwks.json")
-	fmt.Println(fmt.Sprintf("%s/.well-known/jwks.json", a.AuthURL))
-	_, resp, err := a.httpClient.Request(fmt.Sprintf("%s/.well-known/jwks.json", a.AuthURL), "GET", nil, nil, nil)
+	_, resp, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/.well-known/jwks.json", a.AuthURL), "GET", nil, nil, nil)
 	if err != nil {
 		return cert, err
 	}
