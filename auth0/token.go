@@ -96,7 +96,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 	// check token validity
 	if a.isValid(cachedToken) {
-		return authToken, nil
+		return cachedToken, nil
 	}
 
 	// generate a new token if not valid
