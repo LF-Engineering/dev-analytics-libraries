@@ -113,3 +113,8 @@ type AffIdentity struct {
 	IsBot         *int64   `json:"is_bot"`
 	MultiOrgNames []string `json:"multi_org_names"`
 }
+
+// ProfileByUsernameResponse ...
+type ProfileByUsernameResponse struct {
+	Profiles []ProfileResponse `json:"profiles"`
+}
