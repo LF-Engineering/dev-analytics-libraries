@@ -165,7 +165,16 @@ func buildServices(o *Org) (*http.ClientProvider, *auth0.ClientProvider, *elasti
 
 	httpClientProvider := http.NewClientProvider(time.Minute)
 
-	auth0ClientProvider, err := auth0.NewAuth0Client(o.ESCacheURL, o.ESCacheUsername, o.ESCachePassword, o.Environment, o.AuthGrantType, o.AuthClientID, o.AuthClientSecret, o.AuthAudience, o.AuthURL, httpClientProvider, esClientProvider, o.slackProvider, "Library.Organization" )
+	auth0ClientProvider, err := auth0.NewAuth0Client(o.Environment,
+		o.AuthGrantType,
+		o.AuthClientID,
+		o.AuthClientSecret,
+		o.AuthAudience,
+		o.AuthURL,
+		httpClientProvider,
+		esClientProvider,
+		o.slackProvider,
+		"Library.Organization")
 	if err != nil {
 		return nil, nil, nil, err
 	}
