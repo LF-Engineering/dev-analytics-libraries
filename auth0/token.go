@@ -31,9 +31,6 @@ type SlackProvider interface {
 
 // ClientProvider ...
 type ClientProvider struct {
-	ESCacheURL       string
-	ESCacheUsername  string
-	ESCachePassword  string
 	AuthGrantType    string
 	AuthClientID     string
 	AuthClientSecret string
@@ -47,10 +44,7 @@ type ClientProvider struct {
 }
 
 // NewAuth0Client ...
-func NewAuth0Client(esCacheURL,
-	esCacheUsername,
-	esCachePassword,
-	env,
+func NewAuth0Client(env,
 	authGrantType,
 	authClientID,
 	authClientSecret,
@@ -61,9 +55,6 @@ func NewAuth0Client(esCacheURL,
 	slackClient SlackProvider,
 	appName string) (*ClientProvider, error) {
 	auth0 := &ClientProvider{
-		ESCacheURL:       esCacheURL,
-		ESCacheUsername:  esCacheUsername,
-		ESCachePassword:  esCachePassword,
 		AuthGrantType:    authGrantType,
 		AuthClientID:     authClientID,
 		AuthClientSecret: authClientSecret,
