@@ -43,6 +43,7 @@ type ClientProvider struct {
 	httpClient       HTTPClientProvider
 	esClient         ESClientProvider
 	slackClient      SlackProvider
+	appName          string
 }
 
 // NewAuth0Client ...
@@ -57,7 +58,8 @@ func NewAuth0Client(esCacheURL,
 	authURL string,
 	httpClient HTTPClientProvider,
 	esClient ESClientProvider,
-	slackClient SlackProvider) (*ClientProvider, error) {
+	slackClient SlackProvider,
+	appName string) (*ClientProvider, error) {
 	auth0 := &ClientProvider{
 		ESCacheURL:       esCacheURL,
 		ESCacheUsername:  esCacheUsername,
@@ -71,6 +73,7 @@ func NewAuth0Client(esCacheURL,
 		httpClient:       httpClient,
 		esClient:         esClient,
 		slackClient:      slackClient,
+		appName: appName,
 	}
 
 	return auth0, nil
@@ -141,7 +144,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	_, response, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/token", a.AuthURL), "POST", nil, body, nil)
 	if err != nil {
 		go func() {
-			errMsg := fmt.Sprintf("%s: error generating a new token\n %s", a.Environment, err)
+			errMsg := fmt.Sprintf("%s-%s: error generating a new token\n %s", a.appName, a.Environment, err)
 			if err := a.slackClient.SendText(errMsg) ; err != nil {
 				log.Println(" Err: GenerateToken ", a.Environment, err)
 			}
@@ -165,7 +168,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	ok, err := a.isValid(result.AccessToken)
 	if !ok || err != nil {
 		go func() {
-			errMsg := fmt.Sprintf("%s: error validating the newly created token\n %s", a.Environment, err)
+			errMsg := fmt.Sprintf("%s-%s: error validating the newly created token\n %s", a.appName, a.Environment, err)
 			err := a.slackClient.SendText(errMsg)
 			fmt.Println("Err: send to slack: ", err)
 		}()
@@ -179,7 +182,7 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
 		go func() {
-			errMsg := fmt.Sprintf("%s: error cached token not found\n %s", a.Environment, err)
+			errMsg := fmt.Sprintf("%s-%s: error cached token not found\n %s", a.appName, a.Environment, err)
 			err := a.slackClient.SendText(errMsg)
 			fmt.Println("Err: send to slack: ", err)
 		}()
