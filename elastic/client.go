@@ -588,3 +588,32 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 	}
 	return nil
 }
+
+// UpdateDocument update elastic single document
+func (p *ClientProvider) UpdateDocument( index string, id string, body []byte) ([]byte, error){
+
+	buf := bytes.NewReader(body)
+
+	// Create Index request
+	res, err := esapi.UpdateRequest{
+		Index: index,
+		DocumentID:id,
+		Body:  buf,
+	}.Do(context.Background(), p.client)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	resBytes, err := toBytes(res)
+	if err != nil {
+		return nil, err
+	}
+
+
+	return resBytes, nil
+}
