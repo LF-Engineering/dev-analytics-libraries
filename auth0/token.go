@@ -22,6 +22,7 @@ type ESClientProvider interface {
 	Search(index string, query map[string]interface{}) ([]byte, error)
 	CreateIndex(index string, body []byte) ([]byte, error)
 	Get(index string, query map[string]interface{}, result interface{}) error
+	UpdateDocument( index string, id string, body []byte) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -207,7 +208,7 @@ func (a *ClientProvider) createAuthToken(token string) error {
 	}
 	doc, _ := json.Marshal(at)
 	indx := fmt.Sprintf("%s%s", auth0TokenCache,a.Environment )
-	res, err := a.esClient.CreateDocument(indx, tokenDoc, doc)
+	res, err := a.esClient.UpdateDocument(indx, tokenDoc, doc)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
