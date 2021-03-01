@@ -22,7 +22,7 @@ type ESClientProvider interface {
 	Search(index string, query map[string]interface{}) ([]byte, error)
 	CreateIndex(index string, body []byte) ([]byte, error)
 	Get(index string, query map[string]interface{}, result interface{}) error
-	UpdateDocument( index string, id string, body []byte) ([]byte, error)
+	UpdateDocument( index string, id string, body interface{}) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -202,6 +202,7 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 func (a *ClientProvider) createAuthToken(token string) error {
 	log.Println("creating new auth token")
 	at := AuthToken{
+		Name:      "AuthToken",
 		Token:     token,
 		CreatedAt: time.Now().UTC(),
 	}

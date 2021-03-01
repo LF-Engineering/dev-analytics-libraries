@@ -590,9 +590,15 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 }
 
 // UpdateDocument update elastic single document
-func (p *ClientProvider) UpdateDocument( index string, id string, body []byte) ([]byte, error){
+func (p *ClientProvider) UpdateDocument( index string, id string, body interface{}) ([]byte, error){
 
-	buf := bytes.NewReader(body)
+	m := make(map[string]interface{})
+	m["doc"] = body
+	b, err := jsoniter.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.NewReader(b)
 
 	// Create Index request
 	res, err := esapi.UpdateRequest{
