@@ -592,9 +592,9 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 // UpdateDocument update elastic single document
 func (p *ClientProvider) UpdateDocument( index string, id string, body interface{}) ([]byte, error){
 
-	m := make(map[string]interface{})
-	m["doc"] = body
-	b, err := jsoniter.Marshal(m)
+/*	m := make(map[string]interface{})
+	m["doc"] = body*/
+	b, err := jsoniter.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
