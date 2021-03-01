@@ -206,7 +206,8 @@ func (a *ClientProvider) createAuthToken(token string) error {
 		CreatedAt: time.Now().UTC(),
 	}
 	doc, _ := json.Marshal(at)
-	res, err := a.esClient.CreateDocument(strings.TrimSpace(auth0TokenCache+a.Environment), tokenDoc, doc)
+	indx := fmt.Sprintf("%s%s", auth0TokenCache,a.Environment )
+	res, err := a.esClient.CreateDocument(indx, tokenDoc, doc)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
