@@ -258,6 +258,9 @@ func (a *ClientProvider) isValid(token string) (bool, error) {
 
 		return key, nil
 	})
+	if err != nil {
+		return false, err
+	}
 
 	return p.Valid, err
 }
