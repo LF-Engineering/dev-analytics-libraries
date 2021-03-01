@@ -3,6 +3,8 @@ package fixtures
 import (
 	"testing"
 
+	"net/url"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,4 +21,15 @@ func TestParseOrg(t *testing.T) {
 	expected := "stretchr"
 	result := ParseOrg(endPoint)
 	assert.Equal(t, result, expected)
+}
+
+func TestGetGerritRepo(t *testing.T) {
+	// Invalid endpoint test
+	endPoint := "http://dummygerritendpoint"
+	var expected []string
+	projects, repos, err := GetGerritRepos(endPoint)
+	_, ok := err.(*url.Error)
+	assert.Equal(t, expected, projects)
+	assert.Equal(t, expected, repos)
+	assert.Equal(t, true, ok)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v33/github"
+
+	jsoniter "github.com/json-iterator/go"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 )
@@ -187,4 +190,79 @@ func CheckIncluded(endPointName string, repo string, skipREs []*regexp.Regexp, o
 	}
 
 	return included
+}
+
+// GetGerritRepos - return list of repos for given gerrit server (uses HTML crawler)
+func GetGerritRepos(gerritURL string) ([]string, []string, error) {
+	var (
+		body            []byte
+		err             error
+		i               int
+		b               byte
+		projects, repos []string
+		req             *http.Request
+		resp            *http.Response
+		result          map[string]interface{}
+	)
+
+	partials := []string{"r", "gerrit"}
+	for _, partial := range partials {
+		method := http.MethodGet
+		if !strings.HasSuffix(gerritURL, "/") {
+			gerritURL += "/"
+		}
+		url := gerritURL + partial + "/projects/"
+
+		req, err = http.NewRequest(method, os.ExpandEnv(url), nil)
+		if err != nil {
+			fmt.Printf("new request error: %+v for %s url: %s", err, method, url)
+			return projects, repos, err
+		}
+
+		resp, err = http.DefaultClient.Do(req)
+		if err != nil {
+			fmt.Printf("do request error: %+v for %s url: %s\n", err, method, url)
+			return projects, repos, err
+		}
+
+		defer resp.Body.Close()
+
+		body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("ReadAll request error: %+v for %s url: %s\n", err, method, url)
+			return projects, repos, err
+		}
+
+		if resp.StatusCode == http.StatusNotFound {
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			err = fmt.Errorf("Method:%s url:%s status:%d\n%s", method, url, resp.StatusCode, body)
+			return projects, repos, err
+		}
+
+		jsonStart := []byte("{")[0]
+		for i, b = range body {
+			if b == jsonStart {
+				break
+			}
+		}
+		body = body[i:]
+		err = jsoniter.Unmarshal(body, &result)
+		if err != nil {
+			fmt.Printf("Bulk result unmarshal error: %+v", err)
+			return projects, repos, err
+		}
+
+		for project := range result {
+			ary := strings.Split(project, "/")
+			org := ary[0]
+			endpoint := gerritURL + partial + "/" + project
+			projects = append(projects, org)
+			repos = append(repos, endpoint)
+		}
+		break
+	}
+	return projects, repos, nil
 }
