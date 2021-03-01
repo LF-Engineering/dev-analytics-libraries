@@ -212,7 +212,9 @@ func (a *ClientProvider) createAuthToken(token string) error {
 		log.Println("could not write the data")
 		return err
 	}
-
+	r := string(res)
+	fmt.Println("ressss")
+	fmt.Println(r)
 	log.Println("createAuthToken: put in ES ", string(res))
 	return nil
 }
