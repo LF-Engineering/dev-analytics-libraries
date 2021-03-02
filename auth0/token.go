@@ -150,9 +150,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}()
 
 	log.Println(a.AuthURL, " ", string(body))
-	x := string(response)
-	fmt.Println("vvvv22222")
-	fmt.Println(x)
 	err = json.Unmarshal(response, &result)
 	if err != nil {
 		log.Println("GenerateToken", err)
