@@ -22,6 +22,7 @@ type ESClientProvider interface {
 	Search(index string, query map[string]interface{}) ([]byte, error)
 	CreateIndex(index string, body []byte) ([]byte, error)
 	Get(index string, query map[string]interface{}, result interface{}) error
+	UpdateDocument( index string, id string, body interface{}) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -149,6 +150,9 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}()
 
 	log.Println(a.AuthURL, " ", string(body))
+	x := string(response)
+	fmt.Println("vvvv22222")
+	fmt.Println(x)
 	err = json.Unmarshal(response, &result)
 	if err != nil {
 		log.Println("GenerateToken", err)
@@ -202,14 +206,12 @@ func (a *ClientProvider) createAuthToken(token string) error {
 		Token:     token,
 		CreatedAt: time.Now().UTC(),
 	}
-	doc, _ := json.Marshal(at)
-	res, err := a.esClient.CreateDocument(strings.TrimSpace(auth0TokenCache+a.Environment), tokenDoc, doc)
+	_, err := a.esClient.UpdateDocument(fmt.Sprintf("%s%s", auth0TokenCache,a.Environment), tokenDoc, at)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
 	}
 
-	log.Println("createAuthToken: put in ES ", string(res))
 	return nil
 }
 
@@ -249,6 +251,9 @@ func (a *ClientProvider) isValid(token string) (bool, error) {
 
 		return key, nil
 	})
+	if err != nil {
+		return false, err
+	}
 
 	return p.Valid, err
 }
