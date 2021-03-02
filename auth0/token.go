@@ -201,7 +201,7 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 
 func (a *ClientProvider) createAuthToken(token string) error {
 	log.Println("creating new auth token")
-	t := fmt.Sprintf("ctx._source.token = %s", token)
+	//t := fmt.Sprintf("ctx._source.token = %s", token)
 	at := AuthToken{
 		Name:      "AuthToken",
 		Token:     token,
