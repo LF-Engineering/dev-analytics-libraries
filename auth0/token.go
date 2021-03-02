@@ -202,18 +202,16 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 func (a *ClientProvider) createAuthToken(token string) error {
 	log.Println("creating new auth token")
 	t := fmt.Sprintf("ctx._source.token = %s", token)
-	//at := AuthToken{
-	//	Name:      "AuthToken",
-	//	Token:     token,
-	//	CreatedAt: time.Now().UTC(),
-	//}
-	scr := make(map[string]string, 0)
-	scr["script"] = t
-	doc, _ := json.Marshal(scr)
-	sd := string(doc)
-	fmt.Println(sd)
+	at := AuthToken{
+		Name:      "AuthToken",
+		Token:     token,
+		CreatedAt: time.Now().UTC(),
+	}
+	//doc, _ := json.Marshal(at)
+	//sd := string(doc)
+	//fmt.Println(sd)
 	indx := fmt.Sprintf("%s%s", auth0TokenCache,a.Environment )
-	res, err := a.esClient.UpdateDocument(indx, tokenDoc, doc)
+	res, err := a.esClient.UpdateDocument(indx, tokenDoc, at)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
