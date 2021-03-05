@@ -625,12 +625,12 @@ func (p *ClientProvider) UpdateDocument( index string, id string, body interface
 	return resBytes, nil
 }
 
-// GetIndices ...
-func (p *ClientProvider) GetIndices(index string) ([]byte, error) {
+// GetIndices get all indices based on a specific pattern , or you can use _all to get all indices
+func (p *ClientProvider) GetIndices(pattern string) ([]byte, error) {
 
 	// Create Index request
 	res, err := esapi.IndicesGetRequest{
-		Index:  []string{"_all"},
+		Index:  []string{pattern},
 		Pretty: true,
 	}.Do(context.Background(), p.client)
 	if err != nil {
