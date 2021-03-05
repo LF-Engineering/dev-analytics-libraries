@@ -624,3 +624,28 @@ func (p *ClientProvider) UpdateDocument( index string, id string, body interface
 
 	return resBytes, nil
 }
+
+// GetIndices ...
+func (p *ClientProvider) GetIndices(index string) ([]byte, error) {
+
+	// Create Index request
+	res, err := esapi.IndicesGetRequest{
+		Index:  []string{"_all"},
+		Pretty: true,
+	}.Do(context.Background(), p.client)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	resBytes, err := toBytes(res)
+	if err != nil {
+		return nil, err
+	}
+
+	return resBytes, nil
+}
