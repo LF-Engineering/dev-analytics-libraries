@@ -150,9 +150,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 	}()
 
 	log.Println(a.AuthURL, " ", string(body))
-	x := string(response)
-	fmt.Println("vvvv22222")
-	fmt.Println(x)
 	err = json.Unmarshal(response, &result)
 	if err != nil {
 		log.Println("GenerateToken", err)
@@ -201,25 +198,17 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 
 func (a *ClientProvider) createAuthToken(token string) error {
 	log.Println("creating new auth token")
-	//t := fmt.Sprintf("ctx._source.token = %s", token)
 	at := AuthToken{
 		Name:      "AuthToken",
 		Token:     token,
 		CreatedAt: time.Now().UTC(),
 	}
-	//doc, _ := json.Marshal(at)
-	//sd := string(doc)
-	//fmt.Println(sd)
-	indx := fmt.Sprintf("%s%s", auth0TokenCache,a.Environment )
-	res, err := a.esClient.UpdateDocument(indx, tokenDoc, at)
+	_, err := a.esClient.UpdateDocument(fmt.Sprintf("%s%s", auth0TokenCache,a.Environment), tokenDoc, at)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
 	}
-	r := string(res)
-	fmt.Println("ressss")
-	fmt.Println(r)
-	log.Println("createAuthToken: put in ES ", string(res))
+
 	return nil
 }
 
