@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	jsoniter "github.com/json-iterator/go"
+	errs "github.com/pkg/errors"
 )
 
 // ClientProvider ...
@@ -67,6 +68,28 @@ func NewClientProvider(params *Params) (*ClientProvider, error) {
 		return nil, err
 	}
 	return &ClientProvider{client}, err
+}
+
+// CheckIfIndexExists checks if an es index exists and returns a bool depending on whether it exists or not.
+func (p *ClientProvider) CheckIfIndexExists(index string) (bool, error) {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match_phrase": map[string]interface{}{
+				"_index": index,
+			},
+		},
+	}
+
+	_, err := p.Search(index, query)
+	if err != nil {
+		if err.Error() == "index doesn't exist" {
+			return false, nil
+		}
+		return false, errs.Wrap(err, "[CheckIfIndexExists] invalid request")
+	}
+
+	// index exists so return true
+	return true, nil
 }
 
 // CreateIndex ...
@@ -539,7 +562,7 @@ func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]b
 
 // ReadWithScroll scrolls through the pages of size given in the query and adds up the scrollID in the result
 // Which is expected in the subsequent function call to get the next page, empty result indicates the end of the page
-func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error)  {
+func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error) {
 	var res *esapi.Response
 	defer func() {
 		if err := res.Body.Close(); err != nil {
@@ -590,7 +613,7 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 }
 
 // UpdateDocument update elastic single document
-func (p *ClientProvider) UpdateDocument( index string, id string, body interface{}) ([]byte, error){
+func (p *ClientProvider) UpdateDocument(index string, id string, body interface{}) ([]byte, error) {
 
 	m := make(map[string]interface{})
 	m["doc"] = body
@@ -602,10 +625,10 @@ func (p *ClientProvider) UpdateDocument( index string, id string, body interface
 
 	// Create Index request
 	res, err := esapi.UpdateRequest{
-		Index: index,
-		DocumentID:id,
-		Body:  buf,
-		Refresh: "true",
+		Index:      index,
+		DocumentID: id,
+		Body:       buf,
+		Refresh:    "true",
 	}.Do(context.Background(), p.client)
 	if err != nil {
 		return nil, err
@@ -620,7 +643,6 @@ func (p *ClientProvider) UpdateDocument( index string, id string, body interface
 	if err != nil {
 		return nil, err
 	}
-
 
 	return resBytes, nil
 }
