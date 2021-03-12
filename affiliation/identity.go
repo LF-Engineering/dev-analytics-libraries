@@ -307,26 +307,29 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, errors.New("User not found")
 	}
 
-	var profile UniqueIdentityFullProfile
-	err = json.Unmarshal(res, &profile)
+	var profiles ProfileByUsernameResponse
+	err = json.Unmarshal(res, &profiles)
 	if err != nil {
 		return nil, err
 	}
+
+	profile := profiles.Profiles[0]
+
 	var identity AffIdentity
 	profileIdentity := profile.Identities[0]
 
-	identity.UUID = profileIdentity.UUID
+	identity.UUID = &profileIdentity.UUID
 
-	if profileIdentity.Name != nil {
-		identity.Name = *profileIdentity.Name
+	if profileIdentity.Name != "" {
+		identity.Name = profileIdentity.Name
 	} else {
 		identity.Name = unknown
 	}
 
 	identity.Username = username
 
-	if profileIdentity.Email != nil {
-		identity.Email = *profileIdentity.Email
+	if profileIdentity.Email != "" {
+		identity.Email = profileIdentity.Email
 	}
 
 	identity.ID = &profileIdentity.ID
@@ -360,7 +363,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 }
 
 // Get Most Recent Org Name where user has multiple enrollments
-func (a *Affiliation) getUserOrg(enrollments []*Enrollments) *string {
+func (a *Affiliation) getUserOrg(enrollments []Enrollment) *string {
 	var result string
 	var lowest, startTime int64
 	now := time.Now()
