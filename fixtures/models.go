@@ -4,7 +4,8 @@ import "regexp"
 
 // Fixture struct represents a fixture model
 type Fixture struct {
-	Native struct {
+	Disabled bool `yaml:"disabled"`
+	Native   struct {
 		Slug string `yaml:"slug"`
 	} `yaml:"native"`
 	DataSources []struct {
