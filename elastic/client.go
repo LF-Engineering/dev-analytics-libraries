@@ -459,9 +459,9 @@ func (p *ClientProvider) DelayOfCreateIndex(ex func(str string, b []byte) ([]byt
 }
 
 // Search ...
-func (p *ClientProvider) Search(index string, query map[string]interface{}) (bites []byte, err error) {
+func (p *ClientProvider) Search(index string, query map[string]interface{}) ([]byte, error) {
 	var buf bytes.Buffer
-	err = json.NewEncoder(&buf).Encode(query)
+	err := json.NewEncoder(&buf).Encode(query)
 	if err != nil {
 		return nil, err
 	}
@@ -484,11 +484,67 @@ func (p *ClientProvider) Search(index string, query map[string]interface{}) (bit
 		var in interface{}
 		// index exists so return true
 		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
-			return
+			return nil, err
 		}
 
-		bites, err = jsoniter.Marshal(in)
-		return
+		bites, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+
+		return bites, nil
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return nil, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return nil, err
+	}
+
+	return nil, errors.New("search failed")
+}
+
+// SearchWithNoIndex for querying across multiple indices for example: GET _search?allow_no_indices=true
+func (p *ClientProvider) SearchWithNoIndex(query map[string]interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(query)
+	if err != nil {
+		return nil, err
+	}
+	res, err := p.client.Search(
+		p.client.Search.WithAllowNoIndices(true),
+		p.client.Search.WithBody(&buf),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	if res.StatusCode == 200 {
+		var in interface{}
+		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
+			return nil, err
+		}
+
+		bytes, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+		return bytes, nil
 	}
 
 	if res.IsError() {
