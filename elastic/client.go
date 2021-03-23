@@ -659,12 +659,12 @@ func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
 	return indices, nil
 }
 
-// Count ...
-func (p *ClientProvider) Count(index string, query map[string]interface{}) (error, int) {
+// Count get documents count based on query
+func (p *ClientProvider) Count(index string, query map[string]interface{}) (int, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(query)
 	if err != nil {
-		return err, 0
+		return 0, err
 	}
 
 	res, err := p.client.Count(
@@ -672,7 +672,7 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (erro
 		p.client.Count.WithBody(&buf),
 	)
 	if err != nil {
-		return err, 0
+		return 0, err
 	}
 
 	defer func() {
@@ -685,27 +685,27 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (erro
 		result := make(map[string]interface{})
 		// index exists so return true
 		if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
-			return err, 0
+			return 0, err
 		}
 
 		count := result["count"].(int)
-		return nil, count
+		return count, nil
 	}
 
 	if res.IsError() {
 		if res.StatusCode == 404 {
 			// index doesn't exist
-			return errors.New("index doesn't exist"), 0
+			return 0, errors.New("index doesn't exist")
 		}
 
 		var e map[string]interface{}
 		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return err, 0
+			return 0, err
 		}
 
 		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
-		return err, 0
+		return 0, err
 	}
 
-	return nil, 0
+	return 0, nil
 }
