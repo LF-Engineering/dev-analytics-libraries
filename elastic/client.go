@@ -658,3 +658,54 @@ func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
 	}
 	return indices, nil
 }
+
+// Count ...
+func (p *ClientProvider) Count(index string, query map[string]interface{}) (error, int) {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(query)
+	if err != nil {
+		return err, 0
+	}
+
+	res, err := p.client.Count(
+		p.client.Count.WithIndex(index),
+		p.client.Count.WithBody(&buf),
+	)
+	if err != nil {
+		return err, 0
+	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	if res.StatusCode == 200 {
+		result := make(map[string]interface{})
+		// index exists so return true
+		if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
+			return err, 0
+		}
+
+		count := result["count"].(int)
+		return nil, count
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return errors.New("index doesn't exist"), 0
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return err, 0
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return err, 0
+	}
+
+	return nil, 0
+}
