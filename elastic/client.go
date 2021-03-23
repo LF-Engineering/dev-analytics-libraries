@@ -688,7 +688,8 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (int,
 			return 0, err
 		}
 
-		count := result["count"].(int)
+		floatCount := result["count"].(float64)
+		count := int(floatCount)
 		return count, nil
 	}
 
