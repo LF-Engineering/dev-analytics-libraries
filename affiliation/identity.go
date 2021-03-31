@@ -313,32 +313,35 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, err
 	}
 	var identity AffIdentity
-	profileIdentity := profile.Identities[0]
 
-	identity.UUID = profileIdentity.UUID
+	for _, value := range profile.Identities {
+		if value.Source == "github" {
+			profileIdentity := value
+			identity.UUID = profileIdentity.UUID
+			if profileIdentity.Name != nil {
+				identity.Name = *profileIdentity.Name
+			} else {
+				identity.Name = unknown
+			}
 
-	if profileIdentity.Name != nil {
-		identity.Name = *profileIdentity.Name
-	} else {
+			if profileIdentity.Email != nil {
+				identity.Email = *profileIdentity.Email
+			}
+
+			identity.ID = &profileIdentity.ID
+		}
+	}
+
+	if len(profile.Identities) == 0 {
 		identity.Name = unknown
+		identity.ID = &unknown
+		identity.UUID = &unknown
 	}
 
 	identity.Username = username
 
-	if profileIdentity.Email != nil {
-		identity.Email = *profileIdentity.Email
-	}
-
-	identity.ID = &profileIdentity.ID
-
-	identity.IsBot = profile.Profile.IsBot
-
-	if profile.Profile.Gender == nil {
-		identity.Gender = profile.Profile.Gender
-		identity.GenderACC = profile.Profile.GenderAcc
-	} else {
-		identity.Gender = &unknown
-		identity.GenderACC = &genderAcc
+	if profile.Profile != nil {
+		identity.IsBot = profile.Profile.IsBot
 	}
 
 	if profile.Enrollments == nil {
