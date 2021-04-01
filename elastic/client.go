@@ -702,3 +702,89 @@ func (p *ClientProvider) UpdateDocument(index string, id string, body interface{
 
 	return resBytes, nil
 }
+
+// GetIndices get all indices based on a specific pattern , or you can use _all to get all indices
+func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
+
+	// Create Index request
+	res, err := esapi.IndicesGetRequest{
+		Index:  []string{pattern},
+		Pretty: true,
+	}.Do(context.Background(), p.client)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	resBytes, err := toBytes(res)
+	if err != nil {
+		return nil, err
+	}
+
+	var ind map[string]interface{}
+	err = json.Unmarshal(resBytes, &ind)
+	if err != nil {
+		return nil, err
+	}
+	var indices []string
+	for key := range ind{
+		indices = append(indices, key)
+	}
+	return indices, nil
+}
+
+// Count get documents count based on query
+func (p *ClientProvider) Count(index string, query map[string]interface{}) (int, error) {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(query)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := p.client.Count(
+		p.client.Count.WithIndex(index),
+		p.client.Count.WithBody(&buf),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	if res.StatusCode == 200 {
+		result := make(map[string]interface{})
+		// index exists so return true
+		if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
+			return 0, err
+		}
+
+		floatCount := result["count"].(float64)
+		count := int(floatCount)
+		return count, nil
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return 0, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return 0, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return 0, err
+	}
+
+	return 0, nil
+}
