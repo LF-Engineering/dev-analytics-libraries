@@ -80,7 +80,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 
 	if authToken == "" || err != nil {
-		authToken, err = a.refreshToken()
+		authToken, err = a.refreshCachedToken()
 		if err != nil {
 			return "", err
 		}
@@ -94,7 +94,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 		go func() {
 			// refresh token before expiry by X minutes
 			if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
-				if _, err := a.refreshToken(); err != nil {
+				if _, err := a.refreshCachedToken(); err != nil {
 					log.Printf("Error refresh auth0 token %s\n", err.Error())
 				}
 			}
@@ -104,7 +104,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 
 	// generate a new token if not valid
-	return a.refreshToken()
+	return a.refreshCachedToken()
 }
 
 func (a *ClientProvider) generateToken() (string, error) {
@@ -341,7 +341,7 @@ func (a *ClientProvider) getLastActionDate() (time.Time, error) {
 	return now, errors.New("getLastActionDate: could not find the associated date")
 }
 
-func (a *ClientProvider) refreshToken() (string, error) {
+func (a *ClientProvider) refreshCachedToken() (string, error) {
 	authToken, err := a.generateToken()
 	if err != nil {
 		return "", err
