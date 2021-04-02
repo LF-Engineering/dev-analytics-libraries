@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -89,8 +90,9 @@ func (a *ClientProvider) GetToken() (string, error) {
 		return authToken, err
 	}
 	// check token validity
-	ok, err := a.isValid(authToken)
+	ok, claims, err := a.isValid(authToken)
 	if ok {
+		a.refreshTokenBeforeExpiration(claims)
 		return authToken, nil
 	}
 
@@ -157,7 +159,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	if result.AccessToken != "" {
 		log.Println("GenerateToken: Token generated successfully.")
 	}
-	ok, err := a.isValid(result.AccessToken)
+	ok, _, err := a.isValid(result.AccessToken)
 	if !ok || err != nil {
 		go func() {
 			errMsg := fmt.Sprintf("%s-%s: error validating the newly created token\n %s", a.appName, a.Environment, err)
@@ -230,7 +232,7 @@ var searchCacheQuery = map[string]interface{}{
 	},
 }
 
-func (a *ClientProvider) isValid(token string) (bool, error) {
+func (a *ClientProvider) isValid(token string) (bool, interface{}, error) {
 	p, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -249,10 +251,10 @@ func (a *ClientProvider) isValid(token string) (bool, error) {
 		return key, nil
 	})
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 
-	return p.Valid, err
+	return p.Valid, p.Claims, err
 }
 
 // Jwks result from auth0 well know keys
@@ -335,4 +337,27 @@ func (a *ClientProvider) getLastActionDate() (time.Time, error) {
 	}
 
 	return now, errors.New("getLastActionDate: could not find the associated date")
+}
+
+
+func (a *ClientProvider) refreshTokenBeforeExpiration(claims interface{})  {
+	exp := claims.(jwt.MapClaims)["exp"].(float64)
+	sec, dec := math.Modf(exp)
+	t := time.Unix(int64(sec), int64(dec*(1e9)))
+	now := time.Now().UTC()
+	// check if token will expire in less than 30 seconds
+	remainValid := t.After(now.Add(time.Second * time.Duration(30)))
+	if !remainValid {
+		go func() {
+			authToken, err := a.generateToken()
+			if err != nil {
+				return
+			}
+
+			err = a.createAuthToken(authToken)
+			if err != nil {
+				return
+			}
+		}()
+	}
 }
