@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strings"
 	"time"
 
@@ -23,7 +22,7 @@ type ESClientProvider interface {
 	Search(index string, query map[string]interface{}) ([]byte, error)
 	CreateIndex(index string, body []byte) ([]byte, error)
 	Get(index string, query map[string]interface{}, result interface{}) error
-	UpdateDocument( index string, id string, body interface{}) ([]byte, error)
+	UpdateDocument(index string, id string, body interface{}) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -66,7 +65,7 @@ func NewAuth0Client(env,
 		httpClient:       httpClient,
 		esClient:         esClient,
 		slackClient:      slackClient,
-		appName: appName,
+		appName:          appName,
 	}
 
 	return auth0, nil
@@ -81,18 +80,26 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 
 	if authToken == "" || err != nil {
-		authToken, err = a.generateToken()
+		authToken, err = a.refreshToken()
 		if err != nil {
 			return "", err
 		}
-		err := a.createAuthToken(authToken)
 
 		return authToken, err
 	}
+
 	// check token validity
 	ok, claims, err := a.isValid(authToken)
 	if ok {
-		a.refreshTokenBeforeExpiration(claims)
+		go func() {
+			// refresh token before expiry by X minutes
+			if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
+				if _, err := a.refreshToken(); err != nil {
+					log.Printf("Error refresh auth0 token %s", err.Error())
+				}
+			}
+		}()
+
 		return authToken, nil
 	}
 
@@ -139,7 +146,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 	if err != nil {
 		go func() {
 			errMsg := fmt.Sprintf("%s-%s: error generating a new token\n %s", a.appName, a.Environment, err)
-			if err := a.slackClient.SendText(errMsg) ; err != nil {
+			if err := a.slackClient.SendText(errMsg); err != nil {
 				log.Println(" Err: GenerateToken ", a.Environment, err)
 			}
 
@@ -205,7 +212,7 @@ func (a *ClientProvider) createAuthToken(token string) error {
 		Token:     token,
 		CreatedAt: time.Now().UTC(),
 	}
-	_, err := a.esClient.UpdateDocument(fmt.Sprintf("%s%s", auth0TokenCache,a.Environment), tokenDoc, at)
+	_, err := a.esClient.UpdateDocument(fmt.Sprintf("%s%s", auth0TokenCache, a.Environment), tokenDoc, at)
 	if err != nil {
 		log.Println("could not write the data")
 		return err
@@ -232,7 +239,7 @@ var searchCacheQuery = map[string]interface{}{
 	},
 }
 
-func (a *ClientProvider) isValid(token string) (bool, interface{}, error) {
+func (a *ClientProvider) isValid(token string) (bool, jwt.MapClaims, error) {
 	p, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -254,7 +261,12 @@ func (a *ClientProvider) isValid(token string) (bool, interface{}, error) {
 		return false, nil, err
 	}
 
-	return p.Valid, p.Claims, err
+	claims, ok := p.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, nil, err
+	}
+
+	return p.Valid, claims, err
 }
 
 // Jwks result from auth0 well know keys
@@ -339,25 +351,11 @@ func (a *ClientProvider) getLastActionDate() (time.Time, error) {
 	return now, errors.New("getLastActionDate: could not find the associated date")
 }
 
-
-func (a *ClientProvider) refreshTokenBeforeExpiration(claims interface{})  {
-	exp := claims.(jwt.MapClaims)["exp"].(float64)
-	sec, dec := math.Modf(exp)
-	t := time.Unix(int64(sec), int64(dec*(1e9)))
-	now := time.Now().UTC()
-	// check if token will expire in less than 30 seconds
-	remainValid := t.After(now.Add(time.Second * time.Duration(30)))
-	if !remainValid {
-		go func() {
-			authToken, err := a.generateToken()
-			if err != nil {
-				return
-			}
-
-			err = a.createAuthToken(authToken)
-			if err != nil {
-				return
-			}
-		}()
+func (a *ClientProvider) refreshToken() (string, error) {
+	authToken, err := a.generateToken()
+	if err != nil {
+		return "", err
 	}
+
+	return authToken, a.createAuthToken(authToken)
 }
