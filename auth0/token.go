@@ -104,17 +104,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 
 	// generate a new token if not valid
-	authToken, err = a.generateToken()
-	if err != nil {
-		return "", err
-	}
-
-	go func() {
-		err = a.createAuthToken(authToken)
-		log.Println(err)
-	}()
-
-	return authToken, err
+	return a.refreshToken()
 }
 
 func (a *ClientProvider) generateToken() (string, error) {
