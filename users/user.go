@@ -92,14 +92,21 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 		return nil, err
 	}
 	for i, us := range response.Data {
+		emails := map[string]struct{}{}
 		for _, em := range us.Emails {
-			if em.Active && em.IsPrimary && !em.IsDeleted {
-				response.Data[i].Email = em.EmailAddress
+			if em.Active && !em.IsDeleted && em.EmailAddress != "" {
+				if em.IsPrimary {
+					response.Data[i].Email = em.EmailAddress
+					break
+				}
+				emails[em.EmailAddress] = struct{}{}
+			}
+		}
+		if response.Data[i].Email == "" && len(emails) == 1 {
+			for em := range emails {
+				response.Data[i].Email = em
 				break
 			}
-			//if response.Data[i].Email == "" {
-			//	fmt.Printf("user #%d: no primary email address: %+v\n", i, us)
-			//}
 		}
 	}
 	return &response, nil

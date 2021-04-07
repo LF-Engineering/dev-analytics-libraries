@@ -60,13 +60,13 @@ func TestListUsers(t *testing.T) {
 				"Username": "lgryglicki",
 				"Email":    "lgryglicki@cncf.io",
 				"Emails": []map[string]interface{}{
-          {
-					  "EmailAddress": "lgryglicki@cncf.io",
-					  "Active":       true,
-					  "IsDeleted":    false,
-					  "IsPrimary":    true,
-					  "IsVerified":   true,
-          },
+					{
+						"EmailAddress": "lgryglicki@cncf.io",
+						"Active":       true,
+						"IsDeleted":    false,
+						"IsPrimary":    true,
+						"IsVerified":   true,
+					},
 				},
 			},
 		},
