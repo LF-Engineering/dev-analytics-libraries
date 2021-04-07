@@ -2,6 +2,7 @@ package configuration
 
 import "github.com/LF-Engineering/dev-analytics-libraries/aws/ssm"
 
+// SSMConfigStorage ...
 type SSMConfigStorage struct {
 	ssmClient *ssm.SSM
 }

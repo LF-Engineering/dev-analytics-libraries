@@ -12,11 +12,11 @@ func TestGet(t *testing.T) {
 	// act
 	srv := NewProvider(s)
 	URL := "http://localhost:9200"
-	err := srv.Set(EsUrl, URL)
+	err := srv.Set(EsURL, URL)
 
 	// assert
 	assert.NoError(t, err)
-	esURL, err := srv.Get(EsUrl)
+	esURL, err := srv.Get(EsURL)
 	assert.NoError(t, err)
 	assert.Equal(t, URL, esURL)
 

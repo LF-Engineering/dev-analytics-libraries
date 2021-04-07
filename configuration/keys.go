@@ -1,7 +1,9 @@
 package configuration
 
+// Key ...
 type Key string
 
 const (
-	EsUrl = "ES_URL"
+	// EsURL ...
+	EsURL = "ES_URL"
 )

@@ -2,6 +2,7 @@ package configuration
 
 import "errors"
 
+// LocalConfigStorage ...
 type LocalConfigStorage struct {
 	configs map[Key]string
 }
