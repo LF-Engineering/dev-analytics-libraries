@@ -29,7 +29,7 @@
 	    
         // set config value
         URL := "http://localhost:9200"
-	    err := configProvider.Set(EsUrl, URL)
+	    err := configProvider.Set(configuration.EsUrl, URL)
 
         // get config value
-        esURL, err := configProvider.Get(EsUrl)`
+        esURL, err := configProvider.Get(configuration.EsUrl)`
