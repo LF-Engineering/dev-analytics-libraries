@@ -731,7 +731,7 @@ func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
 	}
 
 	var indices []string
-	for key := range ind{
+	for key := range ind {
 		indices = append(indices, key)
 	}
 	return indices, nil
