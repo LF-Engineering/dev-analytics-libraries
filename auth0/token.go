@@ -93,7 +93,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 	if ok {
 		go func() {
 			// refresh token before expiry by X minutes
-			if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == true {
+			if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
 				if _, err := a.refreshCachedToken(); err != nil {
 					log.Printf("Error refresh auth0 token %s\n", err.Error())
 				}
