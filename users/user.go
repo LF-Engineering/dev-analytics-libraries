@@ -38,8 +38,8 @@ type SlackProvider interface {
 	SendText(text string) error
 }
 
-// Usr struct
-type Usr struct {
+// Client struct
+type Client struct {
 	UserBaseURL      string
 	ESCacheURL       string
 	ESCacheUsername  string
@@ -57,7 +57,7 @@ type Usr struct {
 }
 
 // List ...
-func (u *Usr) List(email string, pageSize string, offset string) (*ListResponse, error) {
+func (u *Client) List(email string, pageSize string, offset string) (*ListResponse, error) {
 	token, err := u.auth0Client.GetToken()
 	if err != nil {
 		log.Println("users.List", err)
@@ -120,8 +120,8 @@ func (u *Usr) List(email string, pageSize string, offset string) (*ListResponse,
 // userBaseURL, esCacheUrl, esCacheUsername, esCachePassword, esCacheIndex, env, authGrantType, authClientID, authClientSecret, authAudience, authURL
 func NewClient(userBaseURL, esCacheURL, esCacheUsername,
 	esCachePassword, env, authGrantType, authClientID, authClientSecret,
-	authAudience, authURL string, slackProvider SlackProvider) (*Usr, error) {
-	user := &Usr{
+	authAudience, authURL string, slackProvider SlackProvider) (*Client, error) {
+	user := &Client{
 		UserBaseURL:      userBaseURL,
 		ESCacheURL:       esCacheURL,
 		ESCacheUsername:  esCacheUsername,
@@ -147,7 +147,7 @@ func NewClient(userBaseURL, esCacheURL, esCacheUsername,
 	return user, nil
 }
 
-func buildServices(u *Usr) (*http.ClientProvider, *auth0.ClientProvider, *elastic.ClientProvider, error) {
+func buildServices(u *Client) (*http.ClientProvider, *auth0.ClientProvider, *elastic.ClientProvider, error) {
 	esClientProvider, err := elastic.NewClientProvider(&elastic.Params{
 		URL:      u.ESCacheURL,
 		Username: u.ESCacheUsername,

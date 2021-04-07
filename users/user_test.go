@@ -23,7 +23,7 @@ var (
 	auth0ClientProvider   = &mocks.Auth0ClientProvider{}
 	elasticClientProvider = &mocks.ESClientProvider{}
 	slackClientProvider   = &mocks.SlackProvider{}
-	userStruct            = &Usr{
+	userStruct            = &Client{
 		os.Getenv("PLATFORM_USER_SERVICE_ENDPOINT"),
 		os.Getenv("ELASTIC_CACHE_URL"),
 		os.Getenv("ELASTIC_CACHE_USERNAME"),
