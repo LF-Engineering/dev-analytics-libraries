@@ -92,6 +92,7 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 		return nil, err
 	}
 	for i, us := range response.Data {
+		fmt.Printf("user #%d: %+v\n", i, *us)
 		for _, em := range us.Emails {
 			if em.Active && em.IsPrimary && !em.IsDeleted {
 				response.Data[i].Email = em.EmailAddress
