@@ -2,7 +2,7 @@ package users
 
 // EmailData ...
 type EmailData struct {
-	ID           bool   `json:"ID"`
+	ID           string `json:"ID"`
 	Active       bool   `json:"Active"`
 	EmailAddress string `json:"EmailAddress"`
 	IsDeleted    bool   `json:"IsDeleted"`

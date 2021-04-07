@@ -88,15 +88,17 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 	err = json.Unmarshal(res, &response)
 	if err != nil {
 		log.Println("ListUsers: failed to unmarshal ListUsersResponse: ", err)
-		log.Println("ListUsers: response: ", res)
+		log.Println("ListUsers: response: ", string(res))
 		return nil, err
 	}
 	for i, us := range response.Data {
-		fmt.Printf("user #%d: %+v\n", i, us)
 		for _, em := range us.Emails {
 			if em.Active && em.IsPrimary && !em.IsDeleted {
 				response.Data[i].Email = em.EmailAddress
 				break
+			}
+			if response.Data[i].Email == "" {
+				fmt.Printf("user #%d: no primary email address: %+v\n", i, us)
 			}
 		}
 	}
