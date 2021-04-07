@@ -71,8 +71,8 @@ func TestListUsers(t *testing.T) {
 	httpClientProvider.On("Request", searchEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := userStruct.ListUsers(email, pageSize, offset)
-	assert.Equal(t, actualResponse.Data[0].ID, "XYZ")
-	assert.Equal(t, actualResponse.Data[0].Name, "Lukasz Gryglicki")
-	assert.Equal(t, actualResponse.Data[0].Username, "lgryglicki")
-	assert.Equal(t, actualResponse.Data[0].Email, "lgryglicki@cncf.io")
+	assert.Equal(t, "XYZ", actualResponse.Data[0].ID)
+	assert.Equal(t, "Lukasz Gryglicki", actualResponse.Data[0].Name)
+	assert.Equal(t, "lgryglicki", actualResponse.Data[0].Username)
+	assert.Equal(t, "lgryglicki@cncf.io", actualResponse.Data[0].Email)
 }
