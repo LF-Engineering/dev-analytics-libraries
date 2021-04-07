@@ -79,10 +79,14 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 	} else {
 		endpoint = u.UserBaseURL + "/users?pageSize=" + url.PathEscape(pageSize) + "&offset=" + url.PathEscape(offset)
 	}
-	_, res, err := u.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	status, res, err := u.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
 		log.Println("ListUsers: Could not get the users list: ", err)
 		return nil, err
+	}
+	if status == 502 {
+		log.Println("ListUsers: 502 Bad Gateway")
+		return nil, fmt.Errorf("502 Bad Gateway")
 	}
 	var response ListUsersResponse
 	err = json.Unmarshal(res, &response)
