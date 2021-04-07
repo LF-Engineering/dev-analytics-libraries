@@ -54,12 +54,18 @@ func TestListUsers(t *testing.T) {
 	searchEndpoint := userStruct.UserBaseURL + "/users?email=" + url.QueryEscape(email) + "&pageSize=" + pageSize + "&offset=" + offset
 
 	data := map[string]interface{}{
-		"Data": []map[string]string{
+		"Data": []map[string]interface{}{
 			{
-				"ID":       "XYZ",
-				"Name":     "Lukasz Gryglicki",
-				"Email":    "lgryglicki@cncf.io",
+				"Name":     "Łukasz Gryglicki",
 				"Username": "lgryglicki",
+				"Email":    "lgryglicki@cncf.io",
+				"Emails": []map[string]interface{}{
+					"EmailAddress": "lgryglicki@cncf.io",
+					"Active":       true,
+					"IsDeleted":    false,
+					"IsPrimary":    true,
+					"IsVerified":   true,
+				},
 			},
 		},
 	}
@@ -71,8 +77,12 @@ func TestListUsers(t *testing.T) {
 	httpClientProvider.On("Request", searchEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := userStruct.ListUsers(email, pageSize, offset)
-	assert.Equal(t, "XYZ", actualResponse.Data[0].ID)
 	assert.Equal(t, "Lukasz Gryglicki", actualResponse.Data[0].Name)
 	assert.Equal(t, "lgryglicki", actualResponse.Data[0].Username)
+	assert.Equal(t, "lgryglicki@cncf.io", actualResponse.Data[0].Emails[0].EmailAddress)
+	assert.Equal(t, true, actualResponse.Data[0].Emails[0].Active)
+	assert.Equal(t, false, actualResponse.Data[0].Emails[0].IsDeleted)
+	assert.Equal(t, true, actualResponse.Data[0].Emails[0].IsPrimary)
+	assert.Equal(t, true, actualResponse.Data[0].Emails[0].IsVerified)
 	assert.Equal(t, "lgryglicki@cncf.io", actualResponse.Data[0].Email)
 }
