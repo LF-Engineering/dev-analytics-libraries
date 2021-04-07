@@ -91,6 +91,14 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 		log.Println("ListUsers: response: ", res)
 		return nil, err
 	}
+	for i, us := range response.Data {
+		for _, em := range us.Emails {
+			if em.Active && em.IsPrimary && !em.IsDeleted {
+				response.Data[i].Email = em.EmailAddress
+				break
+			}
+		}
+	}
 	return &response, nil
 }
 
