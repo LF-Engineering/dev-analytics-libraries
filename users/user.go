@@ -97,9 +97,9 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 				response.Data[i].Email = em.EmailAddress
 				break
 			}
-			if response.Data[i].Email == "" {
-				fmt.Printf("user #%d: no primary email address: %+v\n", i, us)
-			}
+			//if response.Data[i].Email == "" {
+			//	fmt.Printf("user #%d: no primary email address: %+v\n", i, us)
+			//}
 		}
 	}
 	return &response, nil
