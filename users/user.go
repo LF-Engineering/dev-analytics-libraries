@@ -60,7 +60,7 @@ type Usr struct {
 func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUsersResponse, error) {
 	token, err := u.auth0Client.GetToken()
 	if err != nil {
-		log.Println(err)
+		log.Println("ListUsers", err)
 		return nil, err
 	}
 	headers := make(map[string]string, 0)
@@ -152,4 +152,3 @@ func buildServices(u *Usr) (*http.ClientProvider, *auth0.ClientProvider, *elasti
 
 	return httpClientProvider, auth0ClientProvider, esClientProvider, nil
 }
-
