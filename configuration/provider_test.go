@@ -1,10 +1,23 @@
 package configuration
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestGet(t *testing.T) {
+	// arrange
 	s := NewLocalConfigStorage()
-	srv := NewProvider(s)
 
-	srv.Set(EsUrl,)
+	// act
+	srv := NewProvider(s)
+	URL := "http://localhost:9200"
+	err := srv.Set(EsUrl, URL)
+
+	// assert
+	assert.NoError(t, err)
+	esURL, err := srv.Get(EsUrl)
+	assert.NoError(t, err)
+	assert.Equal(t, URL, esURL)
+
 }
