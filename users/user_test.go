@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"testing"
 
 	"github.com/LF-Engineering/dev-analytics-libraries/users/mocks"
