@@ -88,6 +88,7 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 	err = json.Unmarshal(res, &response)
 	if err != nil {
 		log.Println("ListUsers: failed to unmarshal ListUsersResponse: ", err)
+		log.Println("ListUsers: response: ", res)
 		return nil, err
 	}
 	return &response, nil
