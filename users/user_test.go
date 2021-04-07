@@ -60,11 +60,13 @@ func TestListUsers(t *testing.T) {
 				"Username": "lgryglicki",
 				"Email":    "lgryglicki@cncf.io",
 				"Emails": []map[string]interface{}{
-					"EmailAddress": "lgryglicki@cncf.io",
-					"Active":       true,
-					"IsDeleted":    false,
-					"IsPrimary":    true,
-					"IsVerified":   true,
+          {
+					  "EmailAddress": "lgryglicki@cncf.io",
+					  "Active":       true,
+					  "IsDeleted":    false,
+					  "IsPrimary":    true,
+					  "IsVerified":   true,
+          },
 				},
 			},
 		},
@@ -77,7 +79,7 @@ func TestListUsers(t *testing.T) {
 	httpClientProvider.On("Request", listEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := userStruct.ListUsers(email, pageSize, offset)
-	assert.Equal(t, "Lukasz Gryglicki", actualResponse.Data[0].Name)
+	assert.Equal(t, "Łukasz Gryglicki", actualResponse.Data[0].Name)
 	assert.Equal(t, "lgryglicki", actualResponse.Data[0].Username)
 	assert.Equal(t, "lgryglicki@cncf.io", actualResponse.Data[0].Emails[0].EmailAddress)
 	assert.Equal(t, true, actualResponse.Data[0].Emails[0].Active)
