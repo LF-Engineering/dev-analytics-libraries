@@ -19,8 +19,8 @@ type User struct {
 	Email    string      `json:"-"` // primary email
 }
 
-// ListUsersResponse ...
-type ListUsersResponse struct {
+// ListResponse ...
+type ListResponse struct {
 	Data     []User `json:"Data"`
 	Metadata struct {
 		Offset    int `json:"Offset"`

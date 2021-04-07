@@ -56,11 +56,11 @@ type Usr struct {
 	slackProvider    SlackProvider
 }
 
-// ListUsers ...
-func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUsersResponse, error) {
+// List ...
+func (u *Usr) List(email string, pageSize string, offset string) (*ListResponse, error) {
 	token, err := u.auth0Client.GetToken()
 	if err != nil {
-		log.Println("ListUsers", err)
+		log.Println("users.List", err)
 		return nil, err
 	}
 	headers := make(map[string]string, 0)
@@ -81,18 +81,18 @@ func (u *Usr) ListUsers(email string, pageSize string, offset string) (*ListUser
 	}
 	status, res, err := u.httpClient.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	if err != nil {
-		log.Println("ListUsers: Could not get the users list: ", err)
+		log.Println("users.List: Could not get the users list: ", err)
 		return nil, err
 	}
 	if status == 502 {
-		log.Println("ListUsers: 502 Bad Gateway")
+		log.Println("users.List: 502 Bad Gateway")
 		return nil, fmt.Errorf("502 Bad Gateway")
 	}
-	var response ListUsersResponse
+	var response ListResponse
 	err = json.Unmarshal(res, &response)
 	if err != nil {
-		log.Println("ListUsers: failed to unmarshal ListUsersResponse: ", err)
-		log.Println("ListUsers: response: ", string(res))
+		log.Println("users.List: failed to unmarshal ListResponse: ", err)
+		log.Println("users.List: response: ", string(res))
 		return nil, err
 	}
 	for i, us := range response.Data {

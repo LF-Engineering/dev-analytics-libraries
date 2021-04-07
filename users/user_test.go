@@ -44,7 +44,7 @@ var (
 	email = "lgryglicki@cncf.io"
 )
 
-func TestListUsers(t *testing.T) {
+func TestList(t *testing.T) {
 	pageSize := "100"
 	offset := "1"
 
@@ -78,7 +78,7 @@ func TestListUsers(t *testing.T) {
 	auth0ClientProvider.On("GetToken").Return(token, nil)
 	httpClientProvider.On("Request", listEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
-	actualResponse, _ := userStruct.ListUsers(email, pageSize, offset)
+	actualResponse, _ := userStruct.List(email, pageSize, offset)
 	assert.Equal(t, "Łukasz Gryglicki", actualResponse.Data[0].Name)
 	assert.Equal(t, "lgryglicki", actualResponse.Data[0].Username)
 	assert.Equal(t, "lgryglicki@cncf.io", actualResponse.Data[0].Emails[0].EmailAddress)
