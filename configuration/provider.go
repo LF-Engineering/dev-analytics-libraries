@@ -1,13 +1,5 @@
 package configuration
 
-// todo: problems
-// 1. mode (local or online)
-// two constructors NewProvider, NewDevelopProvider
-// 2. key names
-// enum
-// 3. config storage
-// configStorage interface
-
 // Configuration ...
 type Configuration struct {
 	configStorage ConfigStorage
@@ -20,12 +12,12 @@ func NewProvider(configStorage ConfigStorage) *Configuration {
 	}
 }
 
-// Get ...
+// Get configuration value by key
 func (c *Configuration) Get(key Key) (string, error) {
 	return c.configStorage.Get(key)
 }
 
-// Get ...
+// Set configuration value
 func (c *Configuration) Set(key Key, val string) error {
 	return c.configStorage.Set(key, val)
 }

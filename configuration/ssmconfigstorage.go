@@ -6,7 +6,7 @@ type SSMConfigStorage struct {
 	ssmClient *ssm.SSM
 }
 
-// NewSSMConfigStorage ...
+// NewSSMConfigStorage create ssm configuration storage
 func NewSSMConfigStorage() (*SSMConfigStorage, error) {
 	s, err := ssm.NewSSMClient()
 	if err != nil {
@@ -18,12 +18,12 @@ func NewSSMConfigStorage() (*SSMConfigStorage, error) {
 	}, nil
 }
 
-// Get ...
+// Get ssm config value by key
 func (s *SSMConfigStorage) Get(key Key) (string, error) {
 	return s.ssmClient.Param(string(key), true, false, "", "", "").GetValue()
 }
 
-// Set ...
+// Set ssm config value
 func (s *SSMConfigStorage) Set(key Key, val string) error {
 	_, err := s.ssmClient.Param(string(key), true, true, "", "", val).UpdateValue()
 	return err

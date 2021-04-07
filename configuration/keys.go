@@ -3,5 +3,5 @@ package configuration
 type Key string
 
 const (
-	EsUrl = "xxxxxxx"
+	EsUrl = "ES_URL"
 )
