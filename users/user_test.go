@@ -51,7 +51,7 @@ func TestListUsers(t *testing.T) {
 	buf := &bytes.Buffer{}
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
-	searchEndpoint := userStruct.UserBaseURL + "/users?email=" + url.QueryEscape(email) + "&pageSize=" + pageSize + "&offset=" + offset
+	listEndpoint := userStruct.UserBaseURL + "/users?email=" + url.QueryEscape(email) + "&pageSize=" + pageSize + "&offset=" + offset
 
 	data := map[string]interface{}{
 		"Data": []map[string]interface{}{
@@ -74,7 +74,7 @@ func TestListUsers(t *testing.T) {
 	dataBytes, _ := ioutil.ReadAll(buf)
 
 	auth0ClientProvider.On("GetToken").Return(token, nil)
-	httpClientProvider.On("Request", searchEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
+	httpClientProvider.On("Request", listEndpoint, "GET", headers, []byte(nil), map[string]string(nil)).Return(OKStatus, dataBytes, nil)
 
 	actualResponse, _ := userStruct.ListUsers(email, pageSize, offset)
 	assert.Equal(t, "Lukasz Gryglicki", actualResponse.Data[0].Name)
