@@ -1,10 +1,10 @@
 # Description
-    configuration is meant to be a single source of configuration values, 
-    in order to decouple configuration logic from configuration storage tool,  
-    configuration package can deal with whatever tool and any application
+    configuration is meant to be a single source of configuration values.
+    in order to decouple configuration logic from configuration storage tool.  
+    configuration package can deal with whatever storage tool, and any application
     wants to get or set configurations must deal with configuration module directly
-    instead of dealing with a specific tool like (ssm or secret manager) also it can be used
-    for local configurations as seen in examples below.
+    instead of dealing with a specific storage tool like (ssm or secret manager), also 
+    it can be used for local configurations as seen in examples below.
 
 ### local usage example
         `   
