@@ -1,15 +1,20 @@
 package ssm
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
+	//"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
+	//"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 // SSM implements the SSM API interface.
@@ -37,14 +42,18 @@ func Session() (*session.Session, error) {
 }
 
 // NewSSMClient Returns an SSM client
-func NewSSMClient() (*SSM, error) {
+func NewSSMClient() (*ssm.Client, error) {
 	// Create AWS Session
 	sess, err := Session()
 	if err != nil {
 		log.Warnf("error while initializing aws session: %+v ", err)
 		return nil, err
 	}
-	ssmClient := &SSM{ssm.New(sess)}
+
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	ssmClient := ssm.NewFromConfig(cfg)
+	xxxx
+	//ssmClient := &SSM{ssm.New(sess)}
 	return ssmClient, nil
 }
 
