@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
 	"log"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type ESClientProvider interface {
 	CreateIndex(index string, body []byte) ([]byte, error)
 	Get(index string, query map[string]interface{}, result interface{}) error
 	UpdateDocument(index string, id string, body interface{}) ([]byte, error)
+	BulkInsert(data []elastic.BulkData) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -306,8 +308,14 @@ func (a *ClientProvider) createLastActionDate() error {
 	}{
 		Date: time.Now().UTC(),
 	}
-	doc, _ := json.Marshal(s)
-	_, err := a.esClient.CreateDocument(strings.TrimSpace(lastAuth0TokenRequest+a.Environment), lastTokenDate, doc)
+	bul := []elastic.BulkData{
+		{
+			IndexName: strings.TrimSpace(lastAuth0TokenRequest+a.Environment),
+			ID: lastTokenDate,
+			Data: s,
+		},
+	}
+	_, err := a.esClient.BulkInsert(bul)
 	if err != nil {
 		log.Println("could not write the data to elastic")
 		return err
