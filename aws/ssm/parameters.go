@@ -3,27 +3,20 @@ package ssm
 import (
 	"context"
 	"fmt"
-	"os"
-
-	//"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	//"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 // SSM implements the SSM API interface.
 type SSM struct {
-	client ssmiface.SSMAPI
+	client ssm.Client
 }
 
 // Session returns new aws session
-func Session() (*session.Session, error) {
+/*func Session() (*session.Session, error) {
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
 		region = "us-west-2"
@@ -40,20 +33,24 @@ func Session() (*session.Session, error) {
 	svc := session.Must(sess, err)
 	return svc, err
 }
+*/
 
 // NewSSMClient Returns an SSM client
-func NewSSMClient() (*ssm.Client, error) {
+func NewSSMClient() (*SSM, error) {
 	// Create AWS Session
-	sess, err := Session()
+	/*sess, err := Session()
 	if err != nil {
 		log.Warnf("error while initializing aws session: %+v ", err)
 		return nil, err
-	}
+	}*/
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
-	ssmClient := ssm.NewFromConfig(cfg)
-	xxxx
-	//ssmClient := &SSM{ssm.New(sess)}
+	if err != nil{
+		return nil, err
+	}
+	//ssmClient := ssm.NewFromConfig(cfg)
+
+	ssmClient := &SSM{*ssm.NewFromConfig(cfg)}
 	return ssmClient, nil
 }
 
@@ -87,27 +84,25 @@ func (s *SSM) Param(name string, decryption bool, overwrite bool, dataType strin
 // SetValue Creates new SSM parameter
 func (p *Param) SetValue() (string, error) {
 	ssmClient := p.ssmClient.client
-	_, err := ssmClient.PutParameter(&ssm.PutParameterInput{
+	_, err := ssmClient.PutParameter(context.TODO() ,&ssm.PutParameterInput{
 		Name:     &p.Name,
 		DataType: &p.DataType,
-		Type:     &p.Type,
+		Type:     types.ParameterTypeSecureString,
 		Value:    &p.Value,
 	})
 	if err != nil {
 		log.Warnf("error creating ssm parameter [%+v] : %+v\n", p.Name, err)
 		return "", err
 	}
-
 	return fmt.Sprintf("successfully created ssm param: %+v", p.Name), nil
 }
 
 // UpdateValue Updates SSM parameter value
 func (p *Param) UpdateValue() (string, error) {
-	_, err := p.ssmClient.client.PutParameter(&ssm.PutParameterInput{
-		Overwrite: &p.Overwrite,
+	_, err := p.ssmClient.client.PutParameter(context.TODO(), &ssm.PutParameterInput{
+		Overwrite: p.Overwrite,
 		Name:      &p.Name,
 		DataType:  &p.DataType,
-		Type:      &p.Type,
 		Value:     &p.Value,
 	})
 	if err != nil {
@@ -121,9 +116,9 @@ func (p *Param) UpdateValue() (string, error) {
 // GetValue Returns SSM parameter value
 func (p *Param) GetValue() (string, error) {
 	ssmClient := p.ssmClient.client
-	parameter, err := ssmClient.GetParameter(&ssm.GetParameterInput{
+	parameter, err := ssmClient.GetParameter(context.TODO(), &ssm.GetParameterInput{
 		Name:           &p.Name,
-		WithDecryption: &p.WithDecryption,
+		WithDecryption: p.WithDecryption,
 	})
 	if err != nil {
 		log.Warnf("error getting ssm parameter [%+v] : %+v\n", p.Name, err)
