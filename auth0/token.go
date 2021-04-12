@@ -91,17 +91,8 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 
 	// check token validity
-	ok, claims, err := a.isValid(authToken)
+	ok, _, err := a.isValid(authToken)
 	if ok {
-		go func() {
-			// refresh token before expiry by X minutes
-			if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
-				if _, err := a.refreshCachedToken(); err != nil {
-					log.Printf("Error refresh auth0 token %s\n", err.Error())
-				}
-			}
-		}()
-
 		return authToken, nil
 	}
 
@@ -133,7 +124,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 		return "", errors.New("can not request more than one token within the same hour")
 	}
 
-	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
 	_, response, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/token", a.AuthURL), "POST", nil, body, nil)
 	if err != nil {
 		go func() {
@@ -356,4 +346,40 @@ func (a *ClientProvider) refreshCachedToken() (string, error) {
 	}
 
 	return authToken, a.createAuthToken(authToken)
+}
+
+// RefreshTokenExpireSoon ...
+func (a *ClientProvider) RefreshTokenExpireSoon() (string, error) {
+	authToken, err := a.getCachedToken()
+	if err != nil {
+		log.Println(err)
+	}
+
+	if authToken == "" || err != nil {
+		authToken, err = a.refreshCachedToken()
+		if err != nil {
+			return "", err
+		}
+		return "cached token is empty", nil
+	}
+
+	ok, claims, err := a.isValid(authToken)
+	if ok && err == nil {
+		if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
+			if _, err := a.refreshCachedToken(); err != nil {
+				log.Printf("Error refresh auth0 token %s\n", err.Error())
+				return "error refreshing auth0 token", err
+			}
+			return "token refreshed successfully", nil
+		}
+
+		return "token is not expiring soon", nil
+	}
+
+	_, err = a.refreshCachedToken()
+	if err != nil {
+		return "", err
+	}
+
+	return "token is not expiring soon", nil
 }
