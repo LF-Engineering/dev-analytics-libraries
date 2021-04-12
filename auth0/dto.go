@@ -80,3 +80,11 @@ const (
 	auth0TokenCache       = "auth0-token-cache-"
 	tokenDoc              = "token"
 )
+
+type RefreshResult string
+
+const(
+	RefreshError RefreshResult = "error refreshing auth0 token"
+	RefreshSuccessful RefreshResult = "token refreshed successfully"
+	NotExpireSoon RefreshResult = "token is not expiring soon"
+)

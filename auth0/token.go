@@ -75,19 +75,14 @@ func NewAuth0Client(env,
 
 // GetToken ...
 func (a *ClientProvider) GetToken() (string, error) {
-	// get cached token
 	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
+		return "", err
 	}
 
-	if authToken == "" || err != nil {
-		authToken, err = a.refreshCachedToken()
-		if err != nil {
-			return "", err
-		}
-
-		return authToken, err
+	if authToken == "" {
+		return authToken, errors.New("cached token is not valid")
 	}
 
 	// check token validity
@@ -300,9 +295,9 @@ func (a *ClientProvider) createLastActionDate() error {
 	}
 	bul := []elastic.BulkData{
 		{
-			IndexName: strings.TrimSpace(lastAuth0TokenRequest+a.Environment),
-			ID: lastTokenDate,
-			Data: s,
+			IndexName: strings.TrimSpace(lastAuth0TokenRequest + a.Environment),
+			ID:        lastTokenDate,
+			Data:      s,
 		},
 	}
 	_, err := a.esClient.BulkInsert(bul)
@@ -348,8 +343,8 @@ func (a *ClientProvider) refreshCachedToken() (string, error) {
 	return authToken, a.createAuthToken(authToken)
 }
 
-// RefreshTokenExpireSoon ...
-func (a *ClientProvider) RefreshTokenExpireSoon() (string, error) {
+// RefreshToken check if token will expire soon, if yes refresh it and save new token to cache storage
+func (a *ClientProvider) RefreshToken() (RefreshResult, error) {
 	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
@@ -358,28 +353,27 @@ func (a *ClientProvider) RefreshTokenExpireSoon() (string, error) {
 	if authToken == "" || err != nil {
 		authToken, err = a.refreshCachedToken()
 		if err != nil {
-			return "", err
+			return RefreshError, err
 		}
-		return "cached token is empty", nil
+		return RefreshSuccessful, nil
 	}
 
 	ok, claims, err := a.isValid(authToken)
 	if ok && err == nil {
-		if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
+		if claims.VerifyExpiresAt(time.Now().Add(60*time.Minute).Unix(), false) == false {
 			if _, err := a.refreshCachedToken(); err != nil {
 				log.Printf("Error refresh auth0 token %s\n", err.Error())
-				return "error refreshing auth0 token", err
+				return RefreshError, err
 			}
-			return "token refreshed successfully", nil
+			return RefreshSuccessful, nil
 		}
-
-		return "token is not expiring soon", nil
+		return NotExpireSoon, nil
 	}
 
 	_, err = a.refreshCachedToken()
 	if err != nil {
-		return "", err
+		return RefreshError, err
 	}
 
-	return "token is not expiring soon", nil
+	return NotExpireSoon, nil
 }
