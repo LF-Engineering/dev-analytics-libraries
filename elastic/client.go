@@ -222,6 +222,17 @@ func (p *ClientProvider) Bulk(body []byte) ([]byte, error) {
 		log.Printf("ReqErr: %s", err.Error())
 		return nil, err
 	}
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err = jsoniter.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return nil, err
+	}
+
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			log.Printf("Err: %s", err.Error())
