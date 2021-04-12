@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
 	"log"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type ESClientProvider interface {
 	CreateIndex(index string, body []byte) ([]byte, error)
 	Get(index string, query map[string]interface{}, result interface{}) error
 	UpdateDocument(index string, id string, body interface{}) ([]byte, error)
+	BulkInsert(data []elastic.BulkData) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -73,33 +75,19 @@ func NewAuth0Client(env,
 
 // GetToken ...
 func (a *ClientProvider) GetToken() (string, error) {
-	// get cached token
 	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
+		return "", err
 	}
 
-	if authToken == "" || err != nil {
-		authToken, err = a.refreshCachedToken()
-		if err != nil {
-			return "", err
-		}
-
-		return authToken, err
+	if authToken == "" {
+		return authToken, errors.New("cached token is not valid")
 	}
 
 	// check token validity
-	ok, claims, err := a.isValid(authToken)
+	ok, _, err := a.isValid(authToken)
 	if ok {
-		go func() {
-			// refresh token before expiry by X minutes
-			if claims.VerifyExpiresAt(time.Now().Add(5*time.Minute).Unix(), false) == false {
-				if _, err := a.refreshCachedToken(); err != nil {
-					log.Printf("Error refresh auth0 token %s\n", err.Error())
-				}
-			}
-		}()
-
 		return authToken, nil
 	}
 
@@ -131,7 +119,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 		return "", errors.New("can not request more than one token within the same hour")
 	}
 
-	// do not include ["Content-Type": "application/json"] header since its already added in the httpClient.Request implementation
 	_, response, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/token", a.AuthURL), "POST", nil, body, nil)
 	if err != nil {
 		go func() {
@@ -306,8 +293,14 @@ func (a *ClientProvider) createLastActionDate() error {
 	}{
 		Date: time.Now().UTC(),
 	}
-	doc, _ := json.Marshal(s)
-	_, err := a.esClient.CreateDocument(strings.TrimSpace(lastAuth0TokenRequest+a.Environment), lastTokenDate, doc)
+	bul := []elastic.BulkData{
+		{
+			IndexName: strings.TrimSpace(lastAuth0TokenRequest + a.Environment),
+			ID:        lastTokenDate,
+			Data:      s,
+		},
+	}
+	_, err := a.esClient.BulkInsert(bul)
 	if err != nil {
 		log.Println("could not write the data to elastic")
 		return err
@@ -348,4 +341,39 @@ func (a *ClientProvider) refreshCachedToken() (string, error) {
 	}
 
 	return authToken, a.createAuthToken(authToken)
+}
+
+// RefreshToken check if token will expire soon, if yes refresh it and save new token to cache storage
+func (a *ClientProvider) RefreshToken() (RefreshResult, error) {
+	authToken, err := a.getCachedToken()
+	if err != nil {
+		log.Println(err)
+	}
+
+	if authToken == "" || err != nil {
+		authToken, err = a.refreshCachedToken()
+		if err != nil {
+			return RefreshError, err
+		}
+		return RefreshSuccessful, nil
+	}
+
+	ok, claims, err := a.isValid(authToken)
+	if ok && err == nil {
+		if claims.VerifyExpiresAt(time.Now().Add(60*time.Minute).Unix(), false) == false {
+			if _, err := a.refreshCachedToken(); err != nil {
+				log.Printf("Error refresh auth0 token %s\n", err.Error())
+				return RefreshError, err
+			}
+			return RefreshSuccessful, nil
+		}
+		return NotExpireSoon, nil
+	}
+
+	_, err = a.refreshCachedToken()
+	if err != nil {
+		return RefreshError, err
+	}
+
+	return NotExpireSoon, nil
 }
