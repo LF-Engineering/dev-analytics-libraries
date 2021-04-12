@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.1.4
 	github.com/json-iterator/go v1.1.10
 	github.com/pkg/errors v0.9.1
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad

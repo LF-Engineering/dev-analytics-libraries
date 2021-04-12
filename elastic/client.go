@@ -17,43 +17,8 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	jsoniter "github.com/json-iterator/go"
 	errs "github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 )
-
-// ClientProvider ...
-type ClientProvider struct {
-	client *elasticsearch.Client
-}
-
-// Params ...
-type Params struct {
-	URL      string
-	Username string
-	Password string
-}
-
-// TopHitsStruct result
-type TopHitsStruct struct {
-	Took         int          `json:"took"`
-	Aggregations Aggregations `json:"aggregations"`
-}
-
-// Aggregations represents elastic Aggregations result
-type Aggregations struct {
-	Stat Stat `json:"stat"`
-}
-
-// Stat represents elastic stat result
-type Stat struct {
-	Value         float64 `json:"value"`
-	ValueAsString string  `json:"value_as_string"`
-}
-
-// BulkData to be saved using bulkIndex
-type BulkData struct {
-	IndexName string `json:"index_name"`
-	ID        string
-	Data      interface{}
-}
 
 // NewClientProvider ...
 func NewClientProvider(params *Params) (*ClientProvider, error) {
@@ -222,6 +187,17 @@ func (p *ClientProvider) Bulk(body []byte) ([]byte, error) {
 		log.Printf("ReqErr: %s", err.Error())
 		return nil, err
 	}
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err = jsoniter.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return nil, err
+	}
+
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			log.Printf("Err: %s", err.Error())
@@ -540,11 +516,11 @@ func (p *ClientProvider) SearchWithNoIndex(query map[string]interface{}) ([]byte
 			return nil, err
 		}
 
-		bytes, err := jsoniter.Marshal(in)
+		bites, err := jsoniter.Marshal(in)
 		if err != nil {
 			return nil, err
 		}
-		return bytes, nil
+		return bites, nil
 	}
 
 	if res.IsError() {
@@ -787,4 +763,50 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (int,
 	}
 
 	return 0, nil
+}
+
+// CreateUUID calls checkIfUUIDExists
+// if a uuid exists in the index then it generates and returns a new one
+func (p *ClientProvider) CreateUUID(index string) (string, error) {
+	newUUID := uuid.NewV4().String()
+
+	ok, err := p.CheckIfUUIDExists(index, newUUID)
+	if err != nil {
+		return "", errs.Wrap(err, "CreateUUID")
+	}
+
+	if ok {
+		p.CreateUUID(index)
+	}
+
+	return newUUID, nil
+}
+
+// CheckIfUUIDExists checks whether a uuid exists as a document id in an index.
+// Returns true or false depending on whether the uuid exists or not
+func (p *ClientProvider) CheckIfUUIDExists(index, uuidString string) (bool, error) {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match_phrase": map[string]interface{}{
+				"_id": fmt.Sprintf("%s", uuidString),
+			},
+		},
+	}
+
+	res, err := p.Search(index, query)
+	if err != nil {
+		return false, errs.Wrap(err, "checkIfUUIDExists invalid request")
+	}
+
+	var data TopHitsStruct
+	if err = json.Unmarshal(res, &data); err != nil {
+		return false, errs.Wrap(err, "checkIfUUIDExists failed to parse json")
+	}
+
+	for _, v := range data.Hits.Hits {
+		if uuidString == v.ID {
+			return true, nil
+		}
+	}
+	return false, nil
 }
