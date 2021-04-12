@@ -86,5 +86,5 @@ type RefreshResult string
 const(
 	RefreshError RefreshResult = "error refreshing auth0 token"
 	RefreshSuccessful RefreshResult = "token refreshed successfully"
-	NotExpireSoon RefreshResult = "token is not expiring soon"
+	NotExpireSoon RefreshResult = "token will not expire soon"
 )
