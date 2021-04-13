@@ -15,9 +15,9 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	errs "github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 // NewClientProvider ...
@@ -768,9 +768,12 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (int,
 // CreateUUID calls checkIfUUIDExists
 // if a uuid exists in the index then it generates and returns a new one
 func (p *ClientProvider) CreateUUID(index string) (string, error) {
-	newUUID := uuid.NewV4().String()
+	newUUID, err := uuid.NewUUID()
+	if err != nil {
+		return "", err
+	}
 
-	ok, err := p.CheckIfUUIDExists(index, newUUID)
+	ok, err := p.CheckIfUUIDExists(index, newUUID.String())
 	if err != nil {
 		return "", errs.Wrap(err, "CreateUUID")
 	}
@@ -779,7 +782,7 @@ func (p *ClientProvider) CreateUUID(index string) (string, error) {
 		p.CreateUUID(index)
 	}
 
-	return newUUID, nil
+	return newUUID.String(), nil
 }
 
 // CheckIfUUIDExists checks whether a uuid exists as a document id in an index.
