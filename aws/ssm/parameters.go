@@ -15,40 +15,12 @@ type SSM struct {
 	client ssm.Client
 }
 
-// Session returns new aws session
-/*func Session() (*session.Session, error) {
-	region := os.Getenv("AWS_REGION")
-	if region == "" {
-		region = "us-west-2"
-	}
-
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{
-			Region:      aws.String(region),
-			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
-		},
-		SharedConfigState: session.SharedConfigEnable,
-	})
-
-	svc := session.Must(sess, err)
-	return svc, err
-}
-*/
-
 // NewSSMClient Returns an SSM client
 func NewSSMClient() (*SSM, error) {
-	// Create AWS Session
-	/*sess, err := Session()
-	if err != nil {
-		log.Warnf("error while initializing aws session: %+v ", err)
-		return nil, err
-	}*/
-
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil{
 		return nil, err
 	}
-	//ssmClient := ssm.NewFromConfig(cfg)
 
 	ssmClient := &SSM{*ssm.NewFromConfig(cfg)}
 	return ssmClient, nil
@@ -69,6 +41,12 @@ type Param struct {
 }
 
 // Param function creates the struct for querying the ssm parameter store
+// name param is used to set the ssm key
+// decryption param determine whither Return decrypted or encrypted values for secure string. is ignored for String and StringList
+// overwrite param determine whither to overwrite existing value or not. used only with update value.
+// dataType param specify data type. valid values are: text | aws:ec2:image
+// paramType param specify data type. valid values are: String | StringList | SecureString
+// value param specify the actual value for parameter
 func (s *SSM) Param(name string, decryption bool, overwrite bool, dataType string, paramType string, value string) *Param {
 	return &Param{
 		Name:           name,
@@ -87,7 +65,7 @@ func (p *Param) SetValue() (string, error) {
 	_, err := ssmClient.PutParameter(context.TODO() ,&ssm.PutParameterInput{
 		Name:     &p.Name,
 		DataType: &p.DataType,
-		Type:     types.ParameterTypeSecureString,
+		Type:     types.ParameterType(p.Type),
 		Value:    &p.Value,
 	})
 	if err != nil {
