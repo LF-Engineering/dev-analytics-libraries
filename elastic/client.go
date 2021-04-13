@@ -768,7 +768,11 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (int,
 // CreateUUID calls checkIfUUIDExists
 // if a uuid exists in the index then it generates and returns a new one
 func (p *ClientProvider) CreateUUID(index string) (string, error) {
-	newUUID := uuid.NewV4().String()
+	v4, err := uuid.NewV4()
+	if err != nil {
+		return "", errs.Wrap(err, "CreateUUID.NewV4")
+	}
+	newUUID := v4.String()
 
 	ok, err := p.CheckIfUUIDExists(index, newUUID)
 	if err != nil {
