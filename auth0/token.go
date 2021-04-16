@@ -82,7 +82,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 	}
 
 	if authToken == "" {
-		return authToken, errors.New("cached token is not valid")
+		return authToken, errors.New("cached token is empty")
 	}
 
 	// check token validity
@@ -91,8 +91,7 @@ func (a *ClientProvider) GetToken() (string, error) {
 		return authToken, nil
 	}
 
-	// generate a new token if not valid
-	return a.refreshCachedToken()
+	return authToken, errors.New("cached token is not valid")
 }
 
 func (a *ClientProvider) generateToken() (string, error) {
