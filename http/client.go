@@ -30,12 +30,17 @@ type Response struct {
 
 // Request http
 func (h *ClientProvider) Request(url string, method string, header map[string]string, body []byte, params map[string]string) (statusCode int, resBody []byte, err error) {
+	header["Content-Type"] =  "application/json"
+	return h.CustomRequest(url, method, header, body, params)
+}
+
+// CustomRequest http with custom headers
+func (h *ClientProvider) CustomRequest(url string, method string, header map[string]string, body []byte, params map[string]string) (statusCode int, resBody []byte, err error) {
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		return 0, nil, err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
 	if header != nil {
 		for k, v := range header {
 			req.Header.Add(k, v)
