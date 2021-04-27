@@ -35,7 +35,11 @@ func (h *ClientProvider) Request(url string, method string, header map[string]st
 		return 0, nil, err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	if cType, ok := header["Content-Type"]; !ok || cType == "application/json" {
+		req.Header.Add("Content-Type", "application/json")
+		delete(header, "Content-Type")
+	}
+
 	if header != nil {
 		for k, v := range header {
 			req.Header.Add(k, v)
