@@ -261,6 +261,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	}
 
 	identity.ID = &ident.ID
+fmt.Println("profile ====", profile.Profile)
 
 	if profile.Profile.IsBot != nil {
 		identity.IsBot = profile.Profile.IsBot
