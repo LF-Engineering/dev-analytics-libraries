@@ -262,9 +262,15 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 
 	identity.ID = &ident.ID
 
-	identity.IsBot = profile.Profile.IsBot
-	identity.Gender = profile.Profile.Gender
-	identity.GenderACC = profile.Profile.GenderAcc
+	if profile.Profile.IsBot != nil {
+		identity.IsBot = profile.Profile.IsBot
+	}
+	if profile.Profile.Gender != nil {
+		identity.Gender = profile.Profile.Gender
+	}
+	if profile.Profile.GenderAcc != nil {
+		identity.GenderACC = profile.Profile.GenderAcc
+	}
 
 	if len(profile.Enrollments) > 1 {
 		identity.OrgName = &profile.Enrollments[0].Organization.Name
