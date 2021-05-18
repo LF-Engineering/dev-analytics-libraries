@@ -1,1 +1,3 @@
 .idea
+*runner_test.go
+out

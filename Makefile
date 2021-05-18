@@ -11,3 +11,6 @@ test:
 
 build:
 	go build ./...
+
+mocks:
+	mockery --all --case=underscore

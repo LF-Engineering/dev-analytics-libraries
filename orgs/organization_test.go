@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"testing"
 
 	"github.com/LF-Engineering/dev-analytics-libraries/orgs/mocks"
@@ -23,15 +22,15 @@ var (
 	elasticClientProvider = &mocks.ESClientProvider{}
 	slackClientProvider   = &mocks.SlackProvider{}
 	orgStruct             = &Org{
-		os.Getenv("ORG_SERVICE_ENDPOINT"),
-		os.Getenv("ELASTIC_CACHE_URL"),
-		os.Getenv("ELASTIC_CACHE_USERNAME"),
-		os.Getenv("ELASTIC_CACHE_PASSWORD"),
-		os.Getenv("AUTH0_PROD_GRANT_TYPE"),
-		os.Getenv("AUTH0_PROD_CLIENT_ID"),
-		os.Getenv("AUTH0_PROD_CLIENT_SECRET"),
-		os.Getenv("AUTH0_PROD_AUDIENCE"),
-		os.Getenv("AUTH0_TOKEN_ENDPOINT"),
+		"ORG_SERVICE_ENDPOINT",
+		"ELASTIC_CACHE_URL",
+		"ELASTIC_CACHE_USERNAME",
+		"ELASTIC_CACHE_PASSWORD",
+		"AUTH0_PROD_GRANT_TYPE",
+		"AUTH0_PROD_CLIENT_ID",
+		"AUTH0_PROD_CLIENT_SECRET",
+		"AUTH0_PROD_AUDIENCE",
+		"AUTH0_TOKEN_ENDPOINT",
 		"test",
 		httpClientProvider,
 		auth0ClientProvider,

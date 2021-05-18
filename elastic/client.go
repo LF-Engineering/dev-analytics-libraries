@@ -15,44 +15,10 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
+	errs "github.com/pkg/errors"
 )
-
-// ClientProvider ...
-type ClientProvider struct {
-	client *elasticsearch.Client
-}
-
-// Params ...
-type Params struct {
-	URL      string
-	Username string
-	Password string
-}
-
-// TopHitsStruct result
-type TopHitsStruct struct {
-	Took         int          `json:"took"`
-	Aggregations Aggregations `json:"aggregations"`
-}
-
-// Aggregations represents elastic Aggregations result
-type Aggregations struct {
-	Stat Stat `json:"stat"`
-}
-
-// Stat represents elastic stat result
-type Stat struct {
-	Value         float64 `json:"value"`
-	ValueAsString string  `json:"value_as_string"`
-}
-
-// BulkData to be saved using bulkIndex
-type BulkData struct {
-	IndexName string `json:"index_name"`
-	ID        string
-	Data      interface{}
-}
 
 // NewClientProvider ...
 func NewClientProvider(params *Params) (*ClientProvider, error) {
@@ -67,6 +33,28 @@ func NewClientProvider(params *Params) (*ClientProvider, error) {
 		return nil, err
 	}
 	return &ClientProvider{client}, err
+}
+
+// CheckIfIndexExists checks if an es index exists and returns a bool depending on whether it exists or not.
+func (p *ClientProvider) CheckIfIndexExists(index string) (bool, error) {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match_phrase": map[string]interface{}{
+				"_index": index,
+			},
+		},
+	}
+
+	_, err := p.Search(index, query)
+	if err != nil {
+		if err.Error() == "index doesn't exist" {
+			return false, nil
+		}
+		return false, errs.Wrap(err, "[CheckIfIndexExists] invalid request")
+	}
+
+	// index exists so return true
+	return true, nil
 }
 
 // CreateIndex ...
@@ -199,6 +187,17 @@ func (p *ClientProvider) Bulk(body []byte) ([]byte, error) {
 		log.Printf("ReqErr: %s", err.Error())
 		return nil, err
 	}
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err = jsoniter.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return nil, err
+	}
+
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			log.Printf("Err: %s", err.Error())
@@ -436,9 +435,9 @@ func (p *ClientProvider) DelayOfCreateIndex(ex func(str string, b []byte) ([]byt
 }
 
 // Search ...
-func (p *ClientProvider) Search(index string, query map[string]interface{}) (bites []byte, err error) {
+func (p *ClientProvider) Search(index string, query map[string]interface{}) ([]byte, error) {
 	var buf bytes.Buffer
-	err = json.NewEncoder(&buf).Encode(query)
+	err := json.NewEncoder(&buf).Encode(query)
 	if err != nil {
 		return nil, err
 	}
@@ -461,11 +460,67 @@ func (p *ClientProvider) Search(index string, query map[string]interface{}) (bit
 		var in interface{}
 		// index exists so return true
 		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
-			return
+			return nil, err
 		}
 
-		bites, err = jsoniter.Marshal(in)
-		return
+		bites, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+
+		return bites, nil
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return nil, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+		return nil, err
+	}
+
+	return nil, errors.New("search failed")
+}
+
+// SearchWithNoIndex for querying across multiple indices for example: GET _search?allow_no_indices=true
+func (p *ClientProvider) SearchWithNoIndex(query map[string]interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(query)
+	if err != nil {
+		return nil, err
+	}
+	res, err := p.client.Search(
+		p.client.Search.WithAllowNoIndices(true),
+		p.client.Search.WithBody(&buf),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	if res.StatusCode == 200 {
+		var in interface{}
+		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
+			return nil, err
+		}
+
+		bites, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+		return bites, nil
 	}
 
 	if res.IsError() {
@@ -539,7 +594,7 @@ func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]b
 
 // ReadWithScroll scrolls through the pages of size given in the query and adds up the scrollID in the result
 // Which is expected in the subsequent function call to get the next page, empty result indicates the end of the page
-func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error)  {
+func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface{}, result interface{}, scrollID string) (err error) {
 	var res *esapi.Response
 	defer func() {
 		if err := res.Body.Close(); err != nil {
@@ -590,7 +645,7 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 }
 
 // UpdateDocument update elastic single document
-func (p *ClientProvider) UpdateDocument( index string, id string, body interface{}) ([]byte, error){
+func (p *ClientProvider) UpdateDocument(index string, id string, body interface{}) ([]byte, error) {
 
 	m := make(map[string]interface{})
 	m["doc"] = body
@@ -602,10 +657,10 @@ func (p *ClientProvider) UpdateDocument( index string, id string, body interface
 
 	// Create Index request
 	res, err := esapi.UpdateRequest{
-		Index: index,
-		DocumentID:id,
-		Body:  buf,
-		Refresh: "true",
+		Index:      index,
+		DocumentID: id,
+		Body:       buf,
+		Refresh:    "true",
 	}.Do(context.Background(), p.client)
 	if err != nil {
 		return nil, err
@@ -621,14 +676,11 @@ func (p *ClientProvider) UpdateDocument( index string, id string, body interface
 		return nil, err
 	}
 
-
 	return resBytes, nil
 }
 
 // GetIndices get all indices based on a specific pattern , or you can use _all to get all indices
 func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
-
-	// Create Index request
 	res, err := esapi.IndicesGetRequest{
 		Index:  []string{pattern},
 		Pretty: true,
@@ -636,6 +688,7 @@ func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			log.Printf("Err: %s", err.Error())
@@ -652,8 +705,9 @@ func (p *ClientProvider) GetIndices(pattern string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var indices []string
-	for key := range ind{
+	for key := range ind {
 		indices = append(indices, key)
 	}
 	return indices, nil
@@ -709,4 +763,53 @@ func (p *ClientProvider) Count(index string, query map[string]interface{}) (int,
 	}
 
 	return 0, nil
+}
+
+// CreateUUID calls checkIfUUIDExists
+// if a uuid exists in the index then it generates and returns a new one
+func (p *ClientProvider) CreateUUID(index string) (string, error) {
+	newUUID, err := uuid.NewUUID()
+	if err != nil {
+		return "", err
+	}
+
+	ok, err := p.CheckIfUUIDExists(index, newUUID.String())
+	if err != nil {
+		return "", errs.Wrap(err, "CreateUUID")
+	}
+
+	if ok {
+		p.CreateUUID(index)
+	}
+
+	return newUUID.String(), nil
+}
+
+// CheckIfUUIDExists checks whether a uuid exists as a document id in an index.
+// Returns true or false depending on whether the uuid exists or not
+func (p *ClientProvider) CheckIfUUIDExists(index, uuidString string) (bool, error) {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match_phrase": map[string]interface{}{
+				"_id": fmt.Sprintf("%s", uuidString),
+			},
+		},
+	}
+
+	res, err := p.Search(index, query)
+	if err != nil {
+		return false, errs.Wrap(err, "checkIfUUIDExists invalid request")
+	}
+
+	var data TopHitsStruct
+	if err = json.Unmarshal(res, &data); err != nil {
+		return false, errs.Wrap(err, "checkIfUUIDExists failed to parse json")
+	}
+
+	for _, v := range data.Hits.Hits {
+		if uuidString == v.ID {
+			return true, nil
+		}
+	}
+	return false, nil
 }
