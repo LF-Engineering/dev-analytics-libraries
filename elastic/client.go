@@ -422,8 +422,8 @@ func (p *ClientProvider) GetStat(index string, field string, aggType string, mus
 // DelayOfCreateIndex delay creating index and retry if fails
 func (p *ClientProvider) DelayOfCreateIndex(ex func(str string, b []byte) ([]byte, error), uin uint, du time.Duration, index string, data []byte) error {
 
-	retry.DefaultAttempts = uin
-	retry.DefaultDelay = du
+	retry.Attempts(uin)
+	retry.Delay(du)
 
 	err := retry.Do(func() error {
 		_, err := ex(index, data)
