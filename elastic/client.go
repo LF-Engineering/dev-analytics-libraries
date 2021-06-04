@@ -817,6 +817,7 @@ func (p *ClientProvider) CheckIfUUIDExists(index, uuidString string) (bool, erro
 
 // UpdateFieldByQuery updates a single field in an es document
 //  params es credentials
+//  index es index
 //  matchFieldName es field name to match in query eg author_uuid
 //  matchValue es field value to match in query eg 97fa918c612a2fda17ba5aa1e1fc933a00e020d7
 //  updateFieldName es field to update eg author_name
