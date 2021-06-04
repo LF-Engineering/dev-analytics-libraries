@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	libHttp "github.com/LF-Engineering/dev-analytics-libraries/http"
 	"github.com/avast/retry-go"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
@@ -812,4 +813,42 @@ func (p *ClientProvider) CheckIfUUIDExists(index, uuidString string) (bool, erro
 		}
 	}
 	return false, nil
+}
+
+// UpdateFieldByQuery updates a single field in an es document
+//  params es credentials
+//  index es index
+//  matchFieldName es field name to match in query eg author_uuid
+//  matchValue es field value to match in query eg 97fa918c612a2fda17ba5aa1e1fc933a00e020d7
+//  updateFieldName es field to update eg author_name
+//  updateValue es field value to update to eg Rob Underwood
+func (p *ClientProvider) UpdateFieldByQuery(params Params, index, matchFieldName, matchValue, updateFieldName, updateValue string) (bool, error) {
+	httpClientProvider := libHttp.NewClientProvider(time.Minute)
+	url := fmt.Sprintf("https://%s:%s@%s/%s/_update_by_query", params.Username, params.Password, params.URL, index)
+
+	updateQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match_phrase": map[string]interface{}{
+							fmt.Sprintf("%s", matchFieldName): fmt.Sprintf("%s", matchValue),
+						},
+					},
+				},
+			},
+		},
+		"script": fmt.Sprintf("ctx._source.'%s' = '%s';", updateFieldName, updateValue),
+	}
+
+	updateBytes, err := json.Marshal(updateQuery)
+	if err != nil {
+		return false, err
+	}
+
+	statusCode, _, err := httpClientProvider.Request(url, http.MethodPost, nil, updateBytes, nil)
+	if statusCode == http.StatusOK {
+		return true, nil
+	}
+	return false, err
 }
