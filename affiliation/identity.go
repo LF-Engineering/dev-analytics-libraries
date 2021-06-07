@@ -215,7 +215,10 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 	endpoint := a.AffBaseURL + "/affiliation/" + "identity/" + key + "/" + value
 	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
-	if statusCode != httpNative.StatusOK || statusCode != httpNative.StatusNotFound {
+	switch statusCode {
+	case httpNative.StatusOK, httpNative.StatusNotFound:
+
+	default:
 		if err != nil {
 			log.Println("GetIdentityByUser: Could not get the identity: ", err)
 		}
@@ -238,7 +241,10 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 
 	profileEndpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/get_profile/" + *ident.UUID
 	statusCode, profileRes, err := a.httpClientProvider.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
-	if statusCode != httpNative.StatusOK || statusCode != httpNative.StatusNotFound {
+	switch statusCode {
+	case httpNative.StatusOK, httpNative.StatusNotFound:
+
+	default:
 		if err != nil {
 			log.Println("GetIdentityByUser: Could not get the identity: ", err)
 		}
