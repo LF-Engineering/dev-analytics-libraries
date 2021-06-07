@@ -5,13 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	httpNative "net/http"
 	"net/url"
 	"strings"
 	"time"
 )
 
-var unknown string = "Unknown"
-var genderAcc int64 = 0
+var (
+	unknown = "Unknown"
+)
 
 // Affiliations interface
 type Affiliations interface {
@@ -57,14 +59,14 @@ func NewAffiliationsClient(affBaseURL string,
 	projectSlug string,
 	httpClientProvider HTTPClientProvider,
 	esClientProvider ESClientProvider,
-	auth0ClientPrivder Auth0ClientProvider,
+	auth0ClientProvider Auth0ClientProvider,
 	slackProvider SlackProvider) (*Affiliation, error) {
 	aff := &Affiliation{
 		AffBaseURL:          affBaseURL,
 		ProjectSlug:         projectSlug,
 		httpClientProvider:  httpClientProvider,
 		esClientProvider:    esClientProvider,
-		auth0ClientProvider: auth0ClientPrivder,
+		auth0ClientProvider: auth0ClientProvider,
 		slackProvider:       slackProvider,
 	}
 
@@ -92,16 +94,20 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	queryParams["id"] = identity.ID
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
-	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
-	if err != nil {
-		log.Println("AddIdentity: Could not insert the identity: ", err)
-		return false
-	}
-	var errMsg AffiliationsResponse
-	err = json.Unmarshal(res, &errMsg)
-	if err != nil || errMsg.Message != "" {
-		log.Println("AddIdentity: failed to add identity: ", errMsg)
-		return false
+	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
+	if statusCode != httpNative.StatusOK {
+		if err != nil {
+			log.Println("AddIdentity: Could not insert the identity: ", err)
+		}
+
+		var errMsg AffiliationsResponse
+		err = json.Unmarshal(res, &errMsg)
+		if err != nil || errMsg.Message != "" {
+			log.Println("AddIdentity: failed to add identity: ", errMsg)
+		}
+
+		time.Sleep(5 * time.Minute)
+		return a.AddIdentity(identity)
 	}
 	return true
 }
@@ -197,7 +203,6 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity, error) {
 	if key == "" || value == "" {
 		nilKeyOrValueErr := "GetIdentityByUser: key or value is null"
-		log.Println(nilKeyOrValueErr)
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
 	token, err := a.auth0ClientProvider.GetToken()
@@ -209,17 +214,23 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = fmt.Sprintf("%s %s", "Bearer", token)
 	endpoint := a.AffBaseURL + "/affiliation/" + "identity/" + key + "/" + value
-	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
-	if err != nil {
-		log.Println("GetIdentityByUser: Could not get the identity: ", err)
-		return nil, err
-	}
+	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	switch statusCode {
+	case httpNative.StatusOK, httpNative.StatusNotFound:
 
-	var errMsg AffiliationsResponse
-	err = json.Unmarshal(res, &errMsg)
-	if err != nil || errMsg.Message != "" {
-		log.Println("GetIdentityByUser: failed to get identity: ", errMsg)
-		return nil, err
+	default:
+		if err != nil {
+			log.Println("GetIdentityByUser: Could not get the identity: ", err)
+		}
+
+		var errMsg AffiliationsResponse
+		err = json.Unmarshal(res, &errMsg)
+		if err != nil || errMsg.Message != "" {
+			log.Println("GetIdentityByUser: failed to get identity: ", errMsg)
+		}
+
+		time.Sleep(5 * time.Minute)
+		return a.GetIdentityByUser(key, value)
 	}
 
 	var ident IdentityData
@@ -229,16 +240,23 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	}
 
 	profileEndpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/get_profile/" + *ident.UUID
-	_, profileRes, err := a.httpClientProvider.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
-	if err != nil {
-		log.Println("GetIdentityByUser: Could not get the identity: ", err)
-		return nil, err
-	}
+	statusCode, profileRes, err := a.httpClientProvider.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
+	switch statusCode {
+	case httpNative.StatusOK, httpNative.StatusNotFound:
 
-	err = json.Unmarshal(res, &errMsg)
-	if err != nil || errMsg.Message != "" {
-		log.Println("GetIdentityByUser: failed to get identity profile: ", errMsg)
-		return nil, err
+	default:
+		if err != nil {
+			log.Println("GetIdentityByUser: Could not get the identity: ", err)
+		}
+
+		var errMsg AffiliationsResponse
+		err = json.Unmarshal(res, &errMsg)
+		if err != nil || errMsg.Message != "" {
+			log.Println("GetIdentityByUser: failed to get identity profile: ", errMsg)
+		}
+
+		time.Sleep(5 * time.Minute)
+		return a.GetIdentityByUser(key, value)
 	}
 
 	var profile UniqueIdentityFullProfile
@@ -304,7 +322,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	}
 
 	if statusCode != 200 {
-		return nil, errors.New("User not found")
+		return nil, errors.New("user not found")
 	}
 
 	var profile UniqueIdentityFullProfile
