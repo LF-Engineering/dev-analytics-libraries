@@ -95,7 +95,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
 	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
-	if statusCode != httpNative.StatusOK {
+	if statusCode != http.StatusOK {
 		if err != nil {
 			log.Println("AddIdentity: Could not insert the identity: ", err)
 		}
@@ -217,7 +217,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	switch statusCode {
 	case http.StatusBadRequest, http.StatusNotFound:
-		log.Println("GetIdentityByUser: Could not get the identity: ", err)
+		log.Println("GetIdentityByUser: Could not get the identity: l", err)
 		return &AffIdentity{}, errors.New("identity not found")
 	case http.StatusOK:
 	default:
