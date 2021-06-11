@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	httpNative "net/http"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -216,11 +216,14 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	endpoint := a.AffBaseURL + "/affiliation/" + "identity/" + key + "/" + value
 	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
 	switch statusCode {
-	case httpNative.StatusOK, httpNative.StatusNotFound:
-
+	case http.StatusBadRequest, http.StatusNotFound:
+		log.Println("GetIdentityByUser: Could not get the identity: ", err)
+		return &AffIdentity{}, errors.New("identity not found")
+	case http.StatusOK:
 	default:
 		if err != nil {
 			log.Println("GetIdentityByUser: Could not get the identity: ", err)
+			return &AffIdentity{}, err
 		}
 
 		var errMsg AffiliationsResponse
@@ -236,14 +239,16 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	var ident IdentityData
 	err = json.Unmarshal(res, &ident)
 	if err != nil {
-		return nil, err
+		return &AffIdentity{}, err
 	}
 
 	profileEndpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/get_profile/" + *ident.UUID
 	statusCode, profileRes, err := a.httpClientProvider.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
 	switch statusCode {
-	case httpNative.StatusOK, httpNative.StatusNotFound:
-
+	case http.StatusBadRequest,http.StatusNotFound :
+		log.Println("GetIdentityByUser: Could not get the identity: ", err)
+		return &AffIdentity{}, errors.New("identity not found")
+	case http.StatusOK:
 	default:
 		if err != nil {
 			log.Println("GetIdentityByUser: Could not get the identity: ", err)
