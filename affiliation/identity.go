@@ -95,7 +95,10 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
 	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
-	if statusCode != http.StatusOK {
+	switch statusCode {
+	case http.StatusOK, http.StatusConflict:
+		return true
+	default:
 		if err != nil {
 			log.Println("AddIdentity: Could not insert the identity: ", err)
 		}
@@ -109,7 +112,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		time.Sleep(5 * time.Minute)
 		return a.AddIdentity(identity)
 	}
-	return true
+	return false
 }
 
 // GetIdentity ...
