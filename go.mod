@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.36.15
-	github.com/aws/aws-sdk-go-v2 v1.3.1 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.1.4
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -14,6 +13,7 @@ require (
 	github.com/google/go-github/v33 v33.0.0
 	github.com/google/uuid v1.1.4
 	github.com/json-iterator/go v1.1.10
+	github.com/labstack/gommon v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
