@@ -96,7 +96,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
 	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "POST", headers, nil, queryParams)
 	switch statusCode {
-	case http.StatusOK, http.StatusConflict:
+	case http.StatusOK, http.StatusConflict, http.StatusCreated:
 		return true
 	default:
 		if err != nil {
@@ -109,10 +109,9 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 			log.Println("AddIdentity: failed to add identity: ", errMsg)
 		}
 
-		time.Sleep(5 * time.Minute)
+		time.Sleep(2 * time.Minute)
 		return a.AddIdentity(identity)
 	}
-	return false
 }
 
 // GetIdentity ...
@@ -221,12 +220,12 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 	switch statusCode {
 	case http.StatusBadRequest, http.StatusNotFound:
 		log.Println("GetIdentityByUser: Could not get the identity: l", err)
-		return &AffIdentity{}, errors.New("identity not found")
+		return nil, errors.New("identity not found")
 	case http.StatusOK:
 	default:
 		if err != nil {
 			log.Println("GetIdentityByUser: Could not get the identity: ", err)
-			return &AffIdentity{}, err
+			return nil, err
 		}
 
 		var errMsg AffiliationsResponse
@@ -235,22 +234,22 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 			log.Println("GetIdentityByUser: failed to get identity: ", errMsg)
 		}
 
-		time.Sleep(5 * time.Minute)
+		time.Sleep(2 * time.Minute)
 		return a.GetIdentityByUser(key, value)
 	}
 
 	var ident IdentityData
 	err = json.Unmarshal(res, &ident)
 	if err != nil {
-		return &AffIdentity{}, err
+		return nil, err
 	}
 
 	profileEndpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/get_profile/" + *ident.UUID
 	statusCode, profileRes, err := a.httpClientProvider.Request(strings.TrimSpace(profileEndpoint), "GET", headers, nil, nil)
 	switch statusCode {
-	case http.StatusBadRequest,http.StatusNotFound :
+	case http.StatusBadRequest, http.StatusNotFound:
 		log.Println("GetIdentityByUser: Could not get the identity: ", err)
-		return &AffIdentity{}, errors.New("identity not found")
+		return nil, errors.New("identity not found")
 	case http.StatusOK:
 	default:
 		if err != nil {
@@ -263,7 +262,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 			log.Println("GetIdentityByUser: failed to get identity profile: ", errMsg)
 		}
 
-		time.Sleep(5 * time.Minute)
+		time.Sleep(2 * time.Minute)
 		return a.GetIdentityByUser(key, value)
 	}
 
