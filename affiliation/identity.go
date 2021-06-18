@@ -157,10 +157,26 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(projectSlug) + "/enrollments/" + uuid
 
-	_, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
-	if err != nil {
-		log.Println("GetOrganizations: Could not get the organizations: ", err)
+	statusCode, res, err := a.httpClientProvider.Request(strings.TrimSpace(endpoint), "GET", headers, nil, nil)
+	switch statusCode {
+	case http.StatusBadRequest, http.StatusNotFound:
+		log.Println("GetOrganizations: Could not get the enrollment: ", err)
 		return nil
+	case http.StatusOK:
+	default:
+		if err != nil {
+			log.Println("GetOrganizations: Could not get the organizations: ", err)
+			return nil
+		}
+
+		var errMsg AffiliationsResponse
+		err = json.Unmarshal(res, &errMsg)
+		if err != nil || errMsg.Message != "" {
+			log.Println("GetOrganizations: failed to get organizations: ", errMsg)
+		}
+
+		time.Sleep(2 * time.Minute)
+		return a.GetOrganizations(uuid, projectSlug)
 	}
 
 	var response EnrollmentsResponse
