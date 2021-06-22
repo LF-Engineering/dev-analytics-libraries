@@ -7,12 +7,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
 
 var (
-	unknown = "Unknown"
+	unknown    = "Unknown"
+	emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
 // Affiliations interface
@@ -109,9 +111,13 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 			log.Println("AddIdentity: failed to add identity: ", errMsg)
 		}
 
-		time.Sleep(2 * time.Minute)
-		return a.AddIdentity(identity)
+		// check if identity has been added to db
+		if checkIdentity := a.GetIdentity(identity.UUID); checkIdentity != nil {
+			return true
+		}
 	}
+	time.Sleep(2 * time.Minute)
+	return a.AddIdentity(identity)
 }
 
 // GetIdentity ...
