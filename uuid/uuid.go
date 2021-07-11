@@ -94,19 +94,19 @@ func GenerateIdentity(source, email, name, username *string) (string, error) {
 	args := make([]string, 4)
 	args[0] = *source
 
-	if email == nil {
+	if email == nil  || *email == "" {
 		args[1] = "none"
 	} else {
 		args[1] = *email
 	}
 
-	if name == nil {
+	if name == nil || *name == "" {
 		args[2] = "none"
 	} else {
 		args[2] = *name
 	}
 
-	if username == nil {
+	if username == nil || *username == "" {
 		args[3] = "none"
 	} else {
 		args[3] = *username
