@@ -92,7 +92,6 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 	queryParams["name"] = identity.Name
 	queryParams["username"] = identity.Username
 	queryParams["email"] = identity.Email
-	queryParams["uuid"] = identity.UUID
 	queryParams["id"] = identity.ID
 
 	endpoint := a.AffBaseURL + "/affiliation/" + url.PathEscape(a.ProjectSlug) + "/add_identity/" + url.PathEscape(identity.Source)
