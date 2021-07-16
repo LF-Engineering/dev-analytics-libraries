@@ -172,32 +172,32 @@ func testGenerateIdentity(t *testing.T) {
 		{
 			"test2",
 			input{&testInput[1][0], &testInput[1][1], &testInput[1][2], &testInput[1][3]},
-			"3f0eb1c38060ce3bc6cb1676c8b9660e99354291",
+			"334da68fcd3da4e799791f73dfada2afb22648c6",
 		},
 		{
 			"test3",
 			input{&testInput[2][0], &testInput[2][1], &testInput[2][2], &testInput[2][3]},
-			"a4b4591c3a2171710c157d7c278ea3cc03becf81",
+			"3710e9f3f44e0434b36840fc39f5e9d1b421b081",
 		},
 		{
 			"test4",
 			input{&testInput[3][0], &testInput[3][1], &testInput[3][2], &testInput[3][3]},
-			"76e3624e24aacae178d05352ad9a871dfaf81c13",
+			"c7acd177d107a0aefa6718e2ff0dec6ceba71660",
 		},
 		{
 			"test5",
 			input{&testInput[4][0], &testInput[4][1], &testInput[4][2], &testInput[4][3]},
-			"6e7ce2426673f8a23a72a343b1382dda84c0078b",
+			"e38a553ae6f7e8096643bd8f22594b3577c4b14c",
 		},
 		{
 			"test6",
 			input{&testInput[5][0], &testInput[5][1], &testInput[5][2], &testInput[5][3]},
-			"c88e126749ff006eb1eea25e4bb4c1c125185ed2",
+			"7db54288c75a9906461f08a91b6895c1957bf38b",
 		},
 		{
 			"test7",
 			input{&testInput[6][0], &testInput[6][1], &testInput[6][2], &testInput[6][3]},
-			"9a0498297d9f0b7e4baf3e6b3740d22d2257367c",
+			"5542b4b2de803f6a6d347c1d21269f2020485678",
 		},
 	}
 
@@ -257,7 +257,7 @@ func testCaseUnaccentName(t *testing.T) {
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
 	unaccentResult, _ := GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	assert.Equal(t, accentResult, unaccentResult)
-	assert.Equal(t, accentResult, "9a0498297d9f0b7e4baf3e6b3740d22d2257367c")
+	assert.Equal(t, accentResult, "5542b4b2de803f6a6d347c1d21269f2020485678")
 
 	inpStr = []string{"scm", "", "Santiago Dueñas", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
@@ -266,7 +266,7 @@ func testCaseUnaccentName(t *testing.T) {
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
 	unaccentResult, _ = GenerateIdentity(inp.source, inp.email, inp.name, inp.username)
 	assert.Equal(t, accentResult, unaccentResult)
-	assert.Equal(t, accentResult, "0f1dd18839007ee8a11d02572ca0a0f4eedaf2cd")
+	assert.Equal(t, accentResult, "a0b8a9154c4327c917b31dd180b63b3696a27e31")
 
 	inpStr = []string{"scm", "", "Tomáš Čechvala", ""}
 	inp = input{&inpStr[0], &inpStr[1], &inpStr[2], &inpStr[3]}
@@ -337,7 +337,6 @@ func testSpecialCasesIdentity(t *testing.T) {
 			args = append(args, testCase.input...)
 			legacyUUID, _ := execLegacyUUID(args...)
 			uid, _ := GenerateIdentity(&testCase.input[0], &testCase.input[1], &testCase.input[2], &testCase.input[3])
-
 			assert.Equal(tt, legacyUUID, uid)
 		})
 	}
