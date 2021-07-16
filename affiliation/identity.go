@@ -323,6 +323,10 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		identity.MultiOrgNames = append(identity.MultiOrgNames, profile.Enrollments[0].Organization.Name)
 	}
 
+	if profile.Profile.Name != nil {
+		identity.Name = *profile.Profile.Name
+	}
+
 	return &identity, nil
 
 }
