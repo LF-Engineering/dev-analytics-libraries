@@ -603,6 +603,9 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 		}
 	}()
 	fmt.Println("*")
+	fmt.Println(time.Now())
+	fmt.Println("scroll: ", scrollID)
+
 	if scrollID == "" {
 		var buf bytes.Buffer
 		err = json.NewEncoder(&buf).Encode(query)
@@ -633,7 +636,6 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 			// index doesn't exist
 			return errors.New("index doesn't exist")
 		}
-		fmt.Println(time.Now())
 		fmt.Println("res: ", res)
 		fmt.Println("scroll: ", scrollID)
 		var e map[string]interface{}
