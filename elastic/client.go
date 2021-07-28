@@ -633,7 +633,8 @@ func (p *ClientProvider) ReadWithScroll(index string, query map[string]interface
 			// index doesn't exist
 			return errors.New("index doesn't exist")
 		}
-fmt.Println(res)
+fmt.Println("res: ", res)
+		fmt.Println("scroll: ", scrollID)
 		var e map[string]interface{}
 		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
 			return err
