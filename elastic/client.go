@@ -122,6 +122,36 @@ func (p *ClientProvider) DeleteIndex(index string, ignoreUnavailable bool) ([]by
 	return body, nil
 }
 
+// DeleteDocumentByQuery ...
+func (p *ClientProvider) DeleteDocumentByQuery(index string, query map[string]interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := p.client.DeleteByQuery(
+		[]string{index},
+		&buf)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Printf("Err: %s", err.Error())
+		}
+	}()
+
+	resBytes, err := toBytes(res)
+	if err != nil {
+		return nil, err
+	}
+
+	return resBytes, nil
+}
+
 // convert response to bytes
 func toBytes(res *esapi.Response) ([]byte, error) {
 	var resBuf bytes.Buffer
