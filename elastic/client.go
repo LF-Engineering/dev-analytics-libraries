@@ -591,7 +591,7 @@ func (p *ClientProvider) CreateDocument(index, documentID string, body []byte) (
 		}
 	}()
 
-	if res.StatusCode == 200 {
+	if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated {
 		var in interface{}
 		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
 			return nil, err
@@ -725,7 +725,7 @@ func (p *ClientProvider) UpdateDocument(index string, id string, body interface{
 		}
 	}()
 
-	if res.StatusCode == 200 {
+	if res.StatusCode == http.StatusOK {
 		var in interface{}
 		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
 			return nil, err
