@@ -591,12 +591,35 @@ func (p *ClientProvider) CreateDocument(index, documentID string, body []byte) (
 		}
 	}()
 
-	resBytes, err := toBytes(res)
-	if err != nil {
+	if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated {
+		var in interface{}
+		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
+			return nil, err
+		}
+
+		bites, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+		return bites, nil
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return nil, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
 		return nil, err
 	}
 
-	return resBytes, nil
+	return nil, errors.New("create document failed")
 }
 
 // UpdateDocumentByQuery ...
@@ -702,12 +725,35 @@ func (p *ClientProvider) UpdateDocument(index string, id string, body interface{
 		}
 	}()
 
-	resBytes, err := toBytes(res)
-	if err != nil {
+	if res.StatusCode == http.StatusOK {
+		var in interface{}
+		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
+			return nil, err
+		}
+
+		bites, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+		return bites, nil
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return nil, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
 		return nil, err
 	}
 
-	return resBytes, nil
+	return nil, errors.New("update document failed")
 }
 
 // GetIndices get all indices based on a specific pattern , or you can use _all to get all indices
