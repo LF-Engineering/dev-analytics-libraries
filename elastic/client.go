@@ -638,35 +638,12 @@ func (p *ClientProvider) UpdateDocumentByQuery(index, query, fields string) ([]b
 		}
 	}()
 
-	if res.StatusCode == 200 {
-		var in interface{}
-		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
-			return nil, err
-		}
-
-		bites, err := jsoniter.Marshal(in)
-		if err != nil {
-			return nil, err
-		}
-		return bites, nil
-	}
-
-	if res.IsError() {
-		if res.StatusCode == 404 {
-			// index doesn't exist
-			return nil, errors.New("index doesn't exist")
-		}
-
-		var e map[string]interface{}
-		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return nil, err
-		}
-
-		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+	resBytes, err := toBytes(res)
+	if err != nil {
 		return nil, err
 	}
 
-	return nil, errors.New("update document failed")
+	return resBytes, nil
 }
 
 // ReadWithScroll scrolls through the pages of size given in the query and adds up the scrollID in the result
@@ -748,12 +725,35 @@ func (p *ClientProvider) UpdateDocument(index string, id string, body interface{
 		}
 	}()
 
-	resBytes, err := toBytes(res)
-	if err != nil {
+	if res.StatusCode == 200 {
+		var in interface{}
+		if err = json.NewDecoder(res.Body).Decode(&in); err != nil {
+			return nil, err
+		}
+
+		bites, err := jsoniter.Marshal(in)
+		if err != nil {
+			return nil, err
+		}
+		return bites, nil
+	}
+
+	if res.IsError() {
+		if res.StatusCode == 404 {
+			// index doesn't exist
+			return nil, errors.New("index doesn't exist")
+		}
+
+		var e map[string]interface{}
+		if err = json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		}
+
+		err = fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
 		return nil, err
 	}
 
-	return resBytes, nil
+	return nil, errors.New("update document failed")
 }
 
 // GetIndices get all indices based on a specific pattern , or you can use _all to get all indices
