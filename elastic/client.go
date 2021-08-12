@@ -14,8 +14,8 @@ import (
 
 	libHttp "github.com/LF-Engineering/dev-analytics-libraries/http"
 	"github.com/avast/retry-go"
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	errs "github.com/pkg/errors"
