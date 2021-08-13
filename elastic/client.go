@@ -28,12 +28,11 @@ func NewClientProvider(params *Params) (*ClientProvider, error) {
 		Username:  params.Username,
 		Password:  params.Password,
 	}
-
 	client, err := elasticsearch.NewClient(config)
 	if err != nil {
 		return nil, err
 	}
-	return &ClientProvider{client}, err
+	return &ClientProvider{client, params}, err
 }
 
 // CheckIfIndexExists checks if an es index exists and returns a bool depending on whether it exists or not.
@@ -478,6 +477,9 @@ func (p *ClientProvider) Search(index string, query map[string]interface{}) ([]b
 		p.client.Search.WithBody(&buf),
 	)
 	if err != nil {
+		if strings.Contains(err.Error(), "server is not Elasticsearch") {
+			fmt.Println("esssssss", p.params)
+		}
 		return nil, err
 	}
 
