@@ -7,6 +7,7 @@ import (
 // ClientProvider ...
 type ClientProvider struct {
 	client *elasticsearch.Client
+	params *Params
 }
 
 // Params ...
