@@ -464,6 +464,22 @@ func (p *ClientProvider) DelayOfCreateIndex(ex func(str string, b []byte) ([]byt
 	return err
 }
 
+// DelayOfSearch ...
+func (p *ClientProvider) DelayOfSearch(ex func(i string, q map[string]interface{}) ([]byte, error), uin uint, du time.Duration, index string, query map[string]interface{}) ([]byte, error) {
+	retry.Attempts(uin)
+	retry.Delay(du)
+	b := make([]byte, 0)
+	err := retry.Do(func() error {
+		err := errors.New("")
+		b, err = ex(index, query)
+		return err
+	}, retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		return retry.BackOffDelay(n, err, config)
+	}))
+
+	return b, err
+}
+
 // Search ...
 func (p *ClientProvider) Search(index string, query map[string]interface{}) ([]byte, error) {
 	var buf bytes.Buffer
@@ -476,12 +492,6 @@ func (p *ClientProvider) Search(index string, query map[string]interface{}) ([]b
 		p.client.Search.WithIndex(index),
 		p.client.Search.WithBody(&buf),
 	)
-	if err != nil {
-		if strings.Contains(err.Error(), "server is not Elasticsearch") {
-			fmt.Println("esssssss", p.params)
-		}
-		return nil, err
-	}
 
 	defer func() {
 		if err := res.Body.Close(); err != nil {

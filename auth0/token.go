@@ -25,6 +25,7 @@ type ESClientProvider interface {
 	Get(index string, query map[string]interface{}, result interface{}) error
 	UpdateDocument(index string, id string, body interface{}) ([]byte, error)
 	BulkInsert(data []elastic.BulkData) ([]byte, error)
+	DelayOfSearch(ex func(i string, q map[string]interface{}) ([]byte, error), uin uint, du time.Duration, index string, query map[string]interface{}) ([]byte, error)
 }
 
 // SlackProvider ...
@@ -134,7 +135,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 		log.Println(err)
 	}()
 
-	log.Println(a.AuthURL, " ", string(body))
 	err = json.Unmarshal(response, &result)
 	if err != nil {
 		log.Println("GenerateToken", err)
@@ -156,11 +156,7 @@ func (a *ClientProvider) generateToken() (string, error) {
 }
 
 func (a *ClientProvider) getCachedToken() (string, error) {
-	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
-	if err != nil {
-		time.Sleep(3 * time.Second)
-		res, err = a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
-	}
+	res, err := a.esClient.DelayOfSearch(a.esClient.Search, 5, time.Second*5, strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
 		go func() {
 			errMsg := fmt.Sprintf("%s-%s: error cached token not found\n %s", a.appName, a.Environment, err)
@@ -168,12 +164,6 @@ func (a *ClientProvider) getCachedToken() (string, error) {
 			fmt.Println("Err: send to slack: ", err)
 		}()
 		return "", err
-	}
-
-	if a.appName == "SDS" {
-		errMsg := fmt.Sprintf("%s-%s: get cached token succssfully", a.appName, a.Environment)
-		err := a.slackClient.SendText(errMsg)
-		fmt.Println("Err: send to slack: ", err)
 	}
 
 	var e ESTokenSchema
