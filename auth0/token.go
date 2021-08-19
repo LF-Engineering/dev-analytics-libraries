@@ -134,7 +134,6 @@ func (a *ClientProvider) generateToken() (string, error) {
 		log.Println(err)
 	}()
 
-	log.Println(a.AuthURL, " ", string(body))
 	err = json.Unmarshal(response, &result)
 	if err != nil {
 		log.Println("GenerateToken", err)
@@ -158,22 +157,12 @@ func (a *ClientProvider) generateToken() (string, error) {
 func (a *ClientProvider) getCachedToken() (string, error) {
 	res, err := a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
 	if err != nil {
-		time.Sleep(3 * time.Second)
-		res, err = a.esClient.Search(strings.TrimSpace(auth0TokenCache+a.Environment), searchTokenQuery)
-	}
-	if err != nil {
 		go func() {
 			errMsg := fmt.Sprintf("%s-%s: error cached token not found\n %s", a.appName, a.Environment, err)
 			err := a.slackClient.SendText(errMsg)
 			fmt.Println("Err: send to slack: ", err)
 		}()
 		return "", err
-	}
-
-	if a.appName == "SDS" {
-		errMsg := fmt.Sprintf("%s-%s: get cached token succssfully", a.appName, a.Environment)
-		err := a.slackClient.SendText(errMsg)
-		fmt.Println("Err: send to slack: ", err)
 	}
 
 	var e ESTokenSchema
