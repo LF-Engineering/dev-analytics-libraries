@@ -1,4 +1,4 @@
-package datasource_status
+package datasourceStatus
 
 import (
 	"errors"
@@ -17,6 +17,7 @@ type ESClientProvider interface {
 	UpdateDocument(index string, id string, body interface{}) ([]byte, error)
 }
 
+// ClientProvider ...
 type ClientProvider struct {
 	esClient    ESClientProvider
 	environment string
@@ -89,7 +90,7 @@ func (s *ClientProvider) PullDatasourceStatus(projectSlug string, datasource str
 		return &res.Hits.Hits[0].Source, nil
 	}
 
-	return &Status{}, errors.New(fmt.Sprintf("error getting Datasource Status, %v", res))
+	return &Status{}, fmt.Errorf("error getting Datasource Status, %v", res)
 }
 
 func (s *ClientProvider) updateDocument(status Status, index string, docID string) error {

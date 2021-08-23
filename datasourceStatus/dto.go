@@ -1,4 +1,4 @@
-package datasource_status
+package datasourceStatus
 
 import "time"
 
