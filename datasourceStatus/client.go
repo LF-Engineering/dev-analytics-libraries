@@ -1,9 +1,8 @@
-package datasourcestatus
+package datasourcecache
 
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/LF-Engineering/dev-analytics-libraries/uuid"
@@ -19,24 +18,24 @@ type ESClientProvider interface {
 	UpdateDocument(index string, id string, body interface{}) ([]byte, error)
 }
 
-// ClientProvider ...
-type ClientProvider struct {
+// StatusProvider ...
+type StatusProvider struct {
 	esClient    ESClientProvider
 	environment string
 }
 
-// NewClientProvider ...
-func NewClientProvider(esClient ESClientProvider, environment string) (*ClientProvider, error) {
-	client := &ClientProvider{
+// NewStatusProvider ...
+func NewStatusProvider(esClient ESClientProvider, environment string) (*StatusProvider, error) {
+	status := &StatusProvider{
 		esClient:    esClient,
 		environment: environment,
 	}
 
-	return client, nil
+	return status, nil
 }
 
-// StoreDatasourceStatus ...
-func (s *ClientProvider) StoreDatasourceStatus(status Status) error {
+// Store ...
+func (s *StatusProvider) Store(status Status) error {
 	if status.Datasource == "" || status.ProjectSlug == "" || status.Endpoint == "" {
 		return errors.New("err : status datasource, project slug and endpoint are all required")
 	}
@@ -55,19 +54,28 @@ func (s *ClientProvider) StoreDatasourceStatus(status Status) error {
 	}
 
 	index := fmt.Sprintf("%s-%s", cacheIndex, s.environment)
-	_, err = s.esClient.CreateDocument(index, docID, b)
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"term": map[string]interface{}{
+				"_id": map[string]string{
+					"value": docID},
+			},
+		},
+	}
+
+	var res TopHits
+	err = s.esClient.Get(fmt.Sprintf("%s-%s", cacheIndex, s.environment), query, &res)
 	if err != nil {
-		if strings.Contains(err.Error(), "409") {
-			return s.updateDocument(status, index, docID)
-		}
+		_, err = s.esClient.CreateDocument(index, docID, b)
 		return err
 	}
 
-	return nil
+	return s.updateDocument(status, index, docID)
+
 }
 
-// PullDatasourceStatus ...
-func (s *ClientProvider) PullDatasourceStatus(projectSlug string, datasource string, endpoint string) (*Status, error) {
+// Pull ...
+func (s *StatusProvider) Pull(projectSlug string, datasource string, endpoint string) (*Status, error) {
 	docID, err := uuid.Generate(projectSlug, datasource, endpoint)
 	if err != nil {
 		return &Status{}, err
@@ -95,7 +103,7 @@ func (s *ClientProvider) PullDatasourceStatus(projectSlug string, datasource str
 	return &Status{}, fmt.Errorf("error getting Datasource Status, %v", res)
 }
 
-func (s *ClientProvider) updateDocument(status Status, index string, docID string) error {
+func (s *StatusProvider) updateDocument(status Status, index string, docID string) error {
 	doc := map[string]interface{}{
 		"project_slug":          status.ProjectSlug,
 		"datasource":            status.Datasource,
