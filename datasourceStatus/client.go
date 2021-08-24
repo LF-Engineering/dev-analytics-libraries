@@ -3,9 +3,11 @@ package datasourcestatus
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/LF-Engineering/dev-analytics-libraries/uuid"
 	jsoniter "github.com/json-iterator/go"
-	"time"
 )
 
 const cacheIndex = "sds-datasource-status"
@@ -55,7 +57,7 @@ func (s *ClientProvider) StoreDatasourceStatus(status Status) error {
 	index := fmt.Sprintf("%s-%s", cacheIndex, s.environment)
 	_, err = s.esClient.CreateDocument(index, docID, b)
 	if err != nil {
-		if err.Error() == "create document failed" {
+		if strings.Contains(err.Error(), "409") {
 			return s.updateDocument(status, index, docID)
 		}
 		return err
@@ -81,7 +83,7 @@ func (s *ClientProvider) PullDatasourceStatus(projectSlug string, datasource str
 	}
 
 	var res TopHits
-	err = s.esClient.Get(fmt.Sprintf("%s-%s", cacheIndex, s.environment), query, res)
+	err = s.esClient.Get(fmt.Sprintf("%s-%s", cacheIndex, s.environment), query, &res)
 	if err != nil {
 		return &Status{}, err
 	}
