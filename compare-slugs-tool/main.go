@@ -328,7 +328,7 @@ type project struct {
 	EndDate         string `json:"EndDate" yaml:"EndDate"`
 	Foundation      struct {
 		ID      string `json:"ID" yaml:"ID"`
-		LogoUrl string `json:"LogoUrl" yaml:"LogoUrl"`
+		LogoURL string `json:"LogoURL" yaml:"LogoURL"`
 		Name    string `json:"Name" yaml:"Name"`
 	} `json:"Foundation" yaml:"Foundation"`
 	ID               string `json:"ID" yaml:"ID"`
