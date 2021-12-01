@@ -10,8 +10,10 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20201229214741-2366c2514674
 	github.com/go-git/go-git/v5 v5.2.0
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/go-github/v33 v33.0.0
 	github.com/google/uuid v1.1.4
+	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/json-iterator/go v1.1.10
 	github.com/labstack/gommon v0.3.0
 	github.com/pkg/errors v0.9.1

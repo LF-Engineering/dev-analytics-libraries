@@ -1,0 +1,4 @@
+fixtures/
+data_in_da_and_slug_mapping_not_in_sfdc.csv
+data_not_in_slug_mapping_and_sfdc.csv
+.env
