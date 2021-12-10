@@ -17,6 +17,11 @@ var (
 	emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
+const (
+	TRUE  = true
+	FALSE = false
+)
+
 // Affiliations interface
 type Affiliations interface {
 	AddIdentity(identity *Identity) bool
@@ -42,7 +47,7 @@ type SlackProvider interface {
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken() (string, error)
+	GetToken(input bool) (string, error)
 }
 
 // Affiliation struct
@@ -81,7 +86,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println("AddIdentity: Identity is nil")
 		return false
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(TRUE)
 	if err != nil {
 		log.Println(err)
 	}
@@ -128,7 +133,7 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 		log.Println("GetIdentity: uuid is empty")
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(TRUE)
 	if err != nil {
 		log.Println(err)
 	}
@@ -156,7 +161,7 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(TRUE)
 	if err != nil {
 		log.Println(err)
 	}
@@ -201,7 +206,7 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(TRUE)
 	if err != nil {
 		log.Println(err)
 	}
@@ -231,7 +236,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		nilKeyOrValueErr := "GetIdentityByUser: key or value is null"
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(TRUE)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -341,7 +346,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
 
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(FALSE)
 	if err != nil {
 		log.Println(err)
 		return nil, err

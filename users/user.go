@@ -17,7 +17,7 @@ import (
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken() (string, error)
+	GetToken(input bool) (string, error)
 }
 
 // HTTPClientProvider ...
@@ -56,9 +56,13 @@ type Client struct {
 	slackProvider    SlackProvider
 }
 
+const (
+	TRUE = true
+)
+
 // List ...
 func (u *Client) List(email string, pageSize string, offset string) (*ListResponse, error) {
-	token, err := u.auth0Client.GetToken()
+	token, err := u.auth0Client.GetToken(TRUE)
 	if err != nil {
 		log.Println("users.List", err)
 		return nil, err
