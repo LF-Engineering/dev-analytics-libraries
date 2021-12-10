@@ -49,7 +49,7 @@ type SlackProvider interface {
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken(input bool) (string, error)
+	GetToken(validateTokenRequired bool) (string, error)
 }
 
 // Affiliation struct
