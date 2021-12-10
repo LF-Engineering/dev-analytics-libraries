@@ -76,6 +76,11 @@ type UniqueIdentityFullProfile struct {
 	UUID        string          `json:"uuid,omitempty"`
 }
 
+// ProfileByUsernameResponse ...
+type ProfileByUsernameResponse struct {
+	Profile []*UniqueIdentityFullProfile `json:"profiles"`
+}
+
 // Enrollments ...
 type Enrollments struct {
 	Organization *Organization `json:"organization,omitempty"`
