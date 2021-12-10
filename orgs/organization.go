@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	// TRUE ...
 	TRUE = true
 )
 

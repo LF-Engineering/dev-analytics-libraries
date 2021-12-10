@@ -18,7 +18,9 @@ var (
 )
 
 const (
-	TRUE  = true
+	// TRUE ...
+	TRUE = true
+	// FALSE ...
 	FALSE = false
 )
 

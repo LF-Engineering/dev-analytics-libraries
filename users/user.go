@@ -57,6 +57,7 @@ type Client struct {
 }
 
 const (
+	// TRUE ...
 	TRUE = true
 )
 
