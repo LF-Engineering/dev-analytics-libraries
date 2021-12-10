@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/LF-Engineering/dev-analytics-libraries/elastic"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -74,7 +75,7 @@ func NewAuth0Client(env,
 }
 
 // GetToken ...
-func (a *ClientProvider) GetToken() (string, error) {
+func (a *ClientProvider) GetToken(input bool) (string, error) {
 	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
@@ -84,14 +85,21 @@ func (a *ClientProvider) GetToken() (string, error) {
 	if authToken == "" {
 		return authToken, errors.New("cached token is empty")
 	}
+	if input {
+		// check token validity
+		ok, _, err := a.isValid(authToken)
+		if err != nil {
+			log.Println(err)
+			return "", err
+		}
 
-	// check token validity
-	ok, _, err := a.isValid(authToken)
-	if ok {
-		return authToken, nil
+		if ok {
+			return authToken, nil
+		}
+
+		return authToken, errors.New("cached token is not valid")
 	}
-
-	return authToken, errors.New("cached token is not valid")
+	return authToken, nil
 }
 
 func (a *ClientProvider) generateToken() (string, error) {

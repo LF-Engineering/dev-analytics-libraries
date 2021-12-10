@@ -42,7 +42,7 @@ type SlackProvider interface {
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken() (string, error)
+	GetToken(validateTokenRequired bool) (string, error)
 }
 
 // Affiliation struct
@@ -81,7 +81,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println("AddIdentity: Identity is nil")
 		return false
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(true)
 	if err != nil {
 		log.Println(err)
 	}
@@ -128,7 +128,7 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 		log.Println("GetIdentity: uuid is empty")
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(true)
 	if err != nil {
 		log.Println(err)
 	}
@@ -156,7 +156,7 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(true)
 	if err != nil {
 		log.Println(err)
 	}
@@ -201,7 +201,7 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(true)
 	if err != nil {
 		log.Println(err)
 	}
@@ -231,7 +231,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		nilKeyOrValueErr := "GetIdentityByUser: key or value is null"
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(true)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -341,7 +341,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
 
-	token, err := a.auth0ClientProvider.GetToken()
+	token, err := a.auth0ClientProvider.GetToken(false)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -360,28 +360,33 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, errors.New("user not found")
 	}
 
-	var profile UniqueIdentityFullProfile
-	err = json.Unmarshal(res, &profile)
+	var response ProfileByUsernameResponse
+	err = json.Unmarshal(res, &response)
 	if err != nil {
 		return nil, err
 	}
+
+	profile := response.Profile[0]
 	var identity AffIdentity
 
 	for _, value := range profile.Identities {
 		if value.Source == "github" {
 			profileIdentity := value
 			identity.UUID = profileIdentity.UUID
-			if profileIdentity.Name != nil {
-				identity.Name = *profileIdentity.Name
-			} else {
-				identity.Name = unknown
-			}
-
 			if profileIdentity.Email != nil {
 				identity.Email = *profileIdentity.Email
 			}
 
 			identity.ID = &profileIdentity.ID
+
+			if profile.Profile != nil {
+				identity.IsBot = profile.Profile.IsBot
+				identity.Name = *profile.Profile.Name
+			} else if profileIdentity.Name != nil {
+				identity.Name = *profileIdentity.Name
+			} else {
+				identity.Name = unknown
+			}
 		}
 	}
 
@@ -392,10 +397,6 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 	}
 
 	identity.Username = username
-
-	if profile.Profile != nil {
-		identity.IsBot = profile.Profile.IsBot
-	}
 
 	if profile.Enrollments == nil {
 		identity.OrgName = &unknown
