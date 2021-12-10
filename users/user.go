@@ -56,14 +56,9 @@ type Client struct {
 	slackProvider    SlackProvider
 }
 
-const (
-	// TRUE ...
-	TRUE = true
-)
-
 // List ...
 func (u *Client) List(email string, pageSize string, offset string) (*ListResponse, error) {
-	token, err := u.auth0Client.GetToken(TRUE)
+	token, err := u.auth0Client.GetToken(true)
 	if err != nil {
 		log.Println("users.List", err)
 		return nil, err
