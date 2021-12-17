@@ -9,6 +9,13 @@ type AuthToken struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// AuthJwks Struct
+type AuthJwks struct {
+	Name      string    `json:"name"`
+	Jwks      string    `json:"jwks"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // Resp struct
 type Resp struct {
 	AccessToken string `json:"access_token"`
@@ -41,6 +48,36 @@ type ESTokenSchema struct {
 			Source struct {
 				Name  string `json:"name"`
 				Token string `json:"token"`
+			} `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
+// ESJwksSchema ...
+type ESJwksSchema struct {
+	Took     int  `json:"took"`
+	TimedOut bool `json:"timed_out"`
+	Shards   struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	} `json:"_shards"`
+	Hits struct {
+		Total struct {
+			Value    int    `json:"value"`
+			Relation string `json:"relation"`
+		} `json:"total"`
+		MaxScore float64 `json:"max_score"`
+		Hits     []struct {
+			Index  string  `json:"_index"`
+			Type   string  `json:"_type"`
+			ID     string  `json:"_id"`
+			Score  float64 `json:"_score"`
+			Source struct {
+				Name      string    `json:"name"`
+				Jwks      string    `json:"jwks"`
+				CreatedAt time.Time `json:"created_at"`
 			} `json:"_source"`
 		} `json:"hits"`
 	} `json:"hits"`
@@ -79,12 +116,14 @@ const (
 	lastAuth0TokenRequest = "last-auth0-token-request-"
 	auth0TokenCache       = "auth0-token-cache-"
 	tokenDoc              = "token"
+	auth0JwksCache        = "auth0-jwks-cache-"
+	jwksDoc               = "jwks"
 )
 
 // RefreshResult ...
 type RefreshResult string
 
-const(
+const (
 	// RefreshError ...
 	RefreshError RefreshResult = "error refreshing auth0 token"
 	// RefreshSuccessful ...
