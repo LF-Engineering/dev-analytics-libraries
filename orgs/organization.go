@@ -17,7 +17,7 @@ import (
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken(validateTokenRequired bool) (string, error)
+	GetToken() (string, error)
 }
 
 // HTTPClientProvider ...
@@ -62,7 +62,7 @@ func (o *Org) SearchOrganization(name string, pageSize string, offset string) (*
 		log.Println("SearchOrganization: name param is empty")
 		return nil, errors.New("SearchOrganization: name param is empty")
 	}
-	token, err := o.auth0Client.GetToken(true)
+	token, err := o.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -98,7 +98,7 @@ func (o *Org) LookupOrganization(name string) (*Organization, error) {
 		log.Println("LookupOrganization: name param is empty")
 		return nil, errors.New("LookupOrganization: name param is empty")
 	}
-	token, err := o.auth0Client.GetToken(true)
+	token, err := o.auth0Client.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err

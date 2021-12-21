@@ -10,7 +10,7 @@ type Auth0ClientProvider struct {
 }
 
 // GetToken provides a mock function with given fields:
-func (_m *Auth0ClientProvider) GetToken(input bool) (string, error) {
+func (_m *Auth0ClientProvider) GetToken() (string, error) {
 	ret := _m.Called()
 
 	var r0 string
