@@ -17,7 +17,7 @@ import (
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken(validateTokenRequired bool) (string, error)
+	GetToken() (string, error)
 }
 
 // HTTPClientProvider ...
@@ -58,7 +58,7 @@ type Client struct {
 
 // List ...
 func (u *Client) List(email string, pageSize string, offset string) (*ListResponse, error) {
-	token, err := u.auth0Client.GetToken(true)
+	token, err := u.auth0Client.GetToken()
 	if err != nil {
 		log.Println("users.List", err)
 		return nil, err

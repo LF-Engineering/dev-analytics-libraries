@@ -75,7 +75,7 @@ func NewAuth0Client(env,
 }
 
 // GetToken ...
-func (a *ClientProvider) GetToken(input bool) (string, error) {
+func (a *ClientProvider) GetToken() (string, error) {
 	authToken, err := a.getCachedToken()
 	if err != nil {
 		log.Println(err)
@@ -86,22 +86,13 @@ func (a *ClientProvider) GetToken(input bool) (string, error) {
 		return authToken, errors.New("cached token is empty")
 	}
 
-	if input {
-		// check token validity
-		ok, _, err := a.isValid(authToken, false)
-		if err != nil {
-			log.Println(err)
-			return "", err
-		}
-
-		if ok {
-			return authToken, nil
-		}
-
-		return authToken, errors.New("cached token is not valid")
+	// check token validity
+	ok, _, err := a.isValid(authToken, false)
+	if ok && err == nil {
+		return authToken, nil
 	}
 
-	return authToken, nil
+	return authToken, errors.New("cached token is not valid")
 }
 
 func (a *ClientProvider) generateToken() (string, error) {
