@@ -50,34 +50,33 @@ func (a *ClientProvider) getPemCert(token *jwt.Token, refreshJwks bool) (string,
 	}
 
 	// check if the cache expired as well is not invoked via refresh token cron
-	if !expired && !refreshJwks {
-		return cert, nil
-	}
-
-	_, resp, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/.well-known/jwks.json", a.AuthURL), "GET", nil, nil, nil)
-	if err != nil {
-		return cert, err
-	}
-
-	var jwks = Jwks{}
-	if err := json.Unmarshal(resp, &jwks); err != nil {
-		return cert, err
-	}
-
-	for _, k := range jwks.Keys {
-		if token.Header["kid"] == k.Kid {
-			cert = "-----BEGIN CERTIFICATE-----\n" + k.X5c[0] + "\n-----END CERTIFICATE-----"
+	if refreshJwks || expired {
+		_, resp, err := a.httpClient.Request(fmt.Sprintf("%s/oauth/.well-known/jwks.json", a.AuthURL), "GET", nil, nil, nil)
+		if err != nil {
+			return cert, err
 		}
-	}
 
-	if cert == "" {
-		err := errors.New("unable to find appropriate key")
-		return cert, err
-	}
+		var jwks = Jwks{}
+		if err := json.Unmarshal(resp, &jwks); err != nil {
+			return cert, err
+		}
 
-	err = a.createAuthJwks(cert)
-	if err != nil {
-		return "", err
+		for _, k := range jwks.Keys {
+			if token.Header["kid"] == k.Kid {
+				cert = "-----BEGIN CERTIFICATE-----\n" + k.X5c[0] + "\n-----END CERTIFICATE-----"
+			}
+		}
+
+		if cert == "" {
+			err := errors.New("unable to find appropriate key")
+			return cert, err
+		}
+
+		err = a.createAuthJwks(cert)
+		if err != nil {
+			return "", err
+		}
+
 	}
 
 	return cert, nil
@@ -106,7 +105,7 @@ func (a *ClientProvider) getCachedJwks() (string, bool, error) {
 	if len(e.Hits.Hits) > 0 {
 		data := e.Hits.Hits[0]
 		// compare current time v/s existing cached time + 30 mins
-		if data.Source.CreatedAt.Add(30*time.Minute).Unix() <= time.Now().UTC().Unix() {
+		if data.Source.CreatedAt.Add(30*time.Minute).Unix() > time.Now().UTC().Unix() {
 			expired = false
 		}
 
