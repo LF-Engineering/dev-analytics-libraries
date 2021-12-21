@@ -42,7 +42,7 @@ type SlackProvider interface {
 
 // Auth0ClientProvider ...
 type Auth0ClientProvider interface {
-	GetToken(validateTokenRequired bool) (string, error)
+	GetToken() (string, error)
 }
 
 // Affiliation struct
@@ -81,7 +81,7 @@ func (a *Affiliation) AddIdentity(identity *Identity) bool {
 		log.Println("AddIdentity: Identity is nil")
 		return false
 	}
-	token, err := a.auth0ClientProvider.GetToken(true)
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -128,7 +128,7 @@ func (a *Affiliation) GetIdentity(uuid string) *Identity {
 		log.Println("GetIdentity: uuid is empty")
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken(true)
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -156,7 +156,7 @@ func (a *Affiliation) GetOrganizations(uuid, projectSlug string) *[]Enrollment {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken(true)
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -201,7 +201,7 @@ func (a *Affiliation) GetProfile(uuid, projectSlug string) *ProfileResponse {
 	if uuid == "" || projectSlug == "" {
 		return nil
 	}
-	token, err := a.auth0ClientProvider.GetToken(true)
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 	}
@@ -231,7 +231,7 @@ func (a *Affiliation) GetIdentityByUser(key string, value string) (*AffIdentity,
 		nilKeyOrValueErr := "GetIdentityByUser: key or value is null"
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
-	token, err := a.auth0ClientProvider.GetToken(true)
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -341,7 +341,7 @@ func (a *Affiliation) GetProfileByUsername(username string, projectSlug string) 
 		return nil, fmt.Errorf(nilKeyOrValueErr)
 	}
 
-	token, err := a.auth0ClientProvider.GetToken(false)
+	token, err := a.auth0ClientProvider.GetToken()
 	if err != nil {
 		log.Println(err)
 		return nil, err
